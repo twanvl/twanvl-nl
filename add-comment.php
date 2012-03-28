@@ -40,8 +40,7 @@ if (strlen(@$_REQUEST['body']) < 4) {
 if ($comment->is_spam()) {
 	$invalid_fields[''] = "Go away spammer!.";
 }
-$captcha_ok = sha1("my-secret" . @$_REQUEST['captcha']) == @$_REQUEST['captcha_answer'];
-if (!$captcha_ok) {
+if (!Captcha::is_answered()) {
 	$invalid_fields['captcha'] = "Go away spammer!.";
 }
 

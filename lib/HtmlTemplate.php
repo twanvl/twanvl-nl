@@ -149,20 +149,11 @@ abstract class HtmlTemplate {
 		echo "    <tr><td><label for='author_email'>Email</label   ><td><input type='email' name='author_email' id='author_email' ".(isset($invalid_fields['author_email'])?'class="invalid" ':'')."value='",request_var('author_email'),"'> <span class='help'>(optional, will not be revealed)</span>\n";
 		echo "    <tr><td><td><label><input type='checkbox' name='author_subscribe' ",request_var_check('author_subscribe'),"> Subscribe to comments on this article</label>\n";
 		// generate captcha
-		if (isset($_REQUEST['captcha_question']) && sha1("my-secret" . @$_REQUEST['captcha']) == @$_REQUEST['captcha_answer']) {
-			$captcha_question = $_REQUEST['captcha_question'];
-			$captcha_answer   = $_REQUEST['captcha_answer'];
-		} else {
-			$i = rand()%15;
-			$j = rand()%15;
-			$captcha_question = "$i + $j = ";
-			$captcha_answer = $i+$j;
-			$captcha_answer = sha1("my-secret" . $captcha_answer);
-		}
+		$captcha = new Captcha();
 		echo "    <tr><td><label for='captcha'>Human?</label><td>";
-		echo "<input type='hidden' name='captcha_answer' value='".htmlspecialchars($captcha_answer)."'>";
-		echo "<input type='hidden' name='captcha_question' value='".htmlspecialchars($captcha_question)."'>";
-		echo "$captcha_question <input type='text' name='captcha' id='captcha' ".(isset($invalid_fields['captcha'])?'class="invalid" ':'')."value='",request_var('captcha'),"'>\n";
+		echo "<input type='hidden' name='captcha_answer' value='".htmlspecialchars($captcha->answer)."'>";
+		echo "<input type='hidden' name='captcha_question' value='".htmlspecialchars($captcha->question)."'>";
+		echo "$captcha->question <input type='text' name='captcha' id='captcha' ".(isset($invalid_fields['captcha'])?'class="invalid" ':'')."value='",request_var('captcha'),"'>\n";
 		echo "   </table>";
 		echo "   <textarea rows='6' name='body'".(isset($invalid_fields['body'])?'class="invalid" ':'').">",htmlspecialchars(@$_REQUEST['body']),"</textarea>\n";
 		echo "   <div class='edit-help'>";
