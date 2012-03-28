@@ -13,6 +13,8 @@ define('BLOG_AUTHOR_EMAIL', "blog@twanvl.nl");
 
 define('CACHE_DIR', '_cache');
 
+define('CAPTCHA_SECRET', 'my-secret');
+
 // -----------------------------------------------------------------------------
 // Authentication
 // -----------------------------------------------------------------------------

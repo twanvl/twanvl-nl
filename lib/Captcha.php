@@ -7,7 +7,6 @@
 class Captcha {
 	public $question; // human readable question
 	public $answer;   // hashed answer
-	static private $secret = 'my-secret';
 
 	// construct a new captcha, or get one from the request variables
 	function __construct() {
@@ -20,12 +19,12 @@ class Captcha {
 			$this->question = "$i + $j = ";
 			//$this->question = format_number($i) . " + " . format_number($j) . " = ";
 			$this->answer = $i+$j;
-			$this->answer = sha1(Captcha::$secret . $this->answer);
+			$this->answer = sha1(CAPTCHA_SECRET . $this->answer);
 		}
 	}
 
 	static function is_answered() {
-		return sha1(Captcha::$secret . @$_REQUEST['captcha']) == @$_REQUEST['captcha_answer'];
+		return sha1(CAPTCHA_SECRET . @$_REQUEST['captcha']) == @$_REQUEST['captcha_answer'];
 	}
 }
 
