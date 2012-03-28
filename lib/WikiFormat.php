@@ -89,6 +89,8 @@ class WikiFormat extends BaseFormat {
 			// ignore the following block
 			$this->state_switch('','');
 			$this->state = 'IGNORE';
+		} elseif (preg_match('@^\]>\s*--\s*BLOCK[:]?\s*(\S+)-continue$@',$line, $ma)){
+			$this->state = '<pre class="'.$ma[1].'-continue';
 		} elseif (preg_match('@^\]?>\s*--\s*BLOCK[:]?\s*(\S+)$@',$line, $ma)){
 			// language of the following block
 			$this->state_switch('<pre class="'.htmlspecialchars($ma[1]).'">','</pre>');
