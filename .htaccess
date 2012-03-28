@@ -1,0 +1,28 @@
+
+# For the love of god, DIE already!
+php_flag magic_quotes_gpc Off
+
+
+ErrorDocument 404 index.php/404
+DirectoryIndex index.php
+
+RewriteEngine On
+
+RewriteRule ^feed$ feed.php [L,QSA]
+RewriteRule ^feed[/](.*)$ feed.php?tag=$1 [L,QSA]
+RewriteRule ^blog[/]?$ blog.php [L,QSA]
+RewriteRule ^tag[/](.*)$ blog.php?tag=$1 [L,QSA]
+
+# Some other rewrites
+RewriteRule ^verlang(lijstje)?/?$ verlanglijst
+
+# Comments
+RewriteRule ^add-comment[/](.*)$ add-comment.php/$1?add_comment=1 [L,QSA]
+RewriteRule ^delete-comment[/](.*)$ delete-comment.php/$1 [L,QSA]
+
+# Rewrite URLs of the form 'x' to the form 'index.php/*?q=*/x'.
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !^/files
+RewriteCond %{REQUEST_URI} !=/favicon.ico
+RewriteRule ^(.*)$ index.php/$1 [L,QSA]
+
