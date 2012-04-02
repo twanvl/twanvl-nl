@@ -7,6 +7,9 @@
 abstract class Feed {
 	public $entries = array();
 	private $loaded = false;
+
+	// for cache
+	public $show_comments = false;
 	
 	function sort() {
 		usort($this->entries,'compare_date');
