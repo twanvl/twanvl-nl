@@ -56,7 +56,7 @@ class HaskellFormat {
 				if ($type == 'keyword') {
 					$match = preg_replace('@^__keyword__@','',$match);
 				}
-				if ($type == 'varid' || $type == 'varop' || $type == 'comment') {
+				if ($type == 'varid' || $type == 'varop' || $type == 'conid' || $type == 'comment') {
 					$match = preg_replace('@__([[:alnum:]_]+)@','<sub>\\1</sub>',$match);
 					$match = preg_replace('@__[{]([^}]*)[}]@','<sub>\\1</sub>',$match);
 					$match = preg_replace('@!!!(.*?)!!!@e','htmlspecialchars_decode("\\1")',$match);
