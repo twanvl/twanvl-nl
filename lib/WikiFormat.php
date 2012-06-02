@@ -85,7 +85,7 @@ class WikiFormat extends BaseFormat {
 		} elseif (preg_match('@^\s*[#](.*)$@',$line,$ma)) {
 			$this->state_switch('<ol>','</ol>');
 			$this->html .= '<li>' . $this->format_inline($ma[1]) . "</li>\n";
-		} elseif (preg_match('@^>\s*--\s*(IGNORE|HIDDEN)\s*$@',$line)){
+		} elseif (preg_match('@^>\s*--\s*(IGNORE|HIDDEN)(: .*)?\s*$@',$line)){
 			// ignore the following block
 			$this->state_switch('','');
 			$this->state = 'IGNORE';
@@ -100,7 +100,7 @@ class WikiFormat extends BaseFormat {
 				// ignore this block, for literal Haskell files
 				return;
 			}
-			if (strpos($this->state,'<pre class="haskell-') === false) {
+			if (strpos($this->state,'<pre class="haskell') === false) {
 				$this->state_switch('<pre class="haskell">','</pre>');
 			}
 			if (trim($ma[1]) === '') {
@@ -110,7 +110,7 @@ class WikiFormat extends BaseFormat {
 			}
 		} elseif (preg_match('@^\]> ?(.*)$@',$line,$ma)) {
 			// source code, no formating
-			if (strpos($this->state,'<pre class="haskell-') !== false) {
+			if (strpos($this->state,'<pre class="haskell') !== false) {
 			} else {
 				$this->state_switch('<pre class="ghci">','</pre>');
 			}
