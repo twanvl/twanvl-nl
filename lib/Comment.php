@@ -53,13 +53,17 @@ class Comment {
         // Heuristic: <a>[url][link], with random text, invalid links
 		if (preg_match('@<a href.*[.]com/?".*\[url=http.*\[/url].*\[link@i',$this->body)) return true;
 		// Banned IPs
-		$banned_ips = array("64.31.57.19","66.151.61.111","83.238.5.206","109.230.216.60","109.230.216.225","178.196.19.108","173.236.190.37","222.77.234.145");
+		$banned_ips = array("64.31.57.19","66.151.61.111","83.238.5.206","109.230.216.60","109.230.216.225","178.196.19.108","173.236.190.37","222.77.234.145","217.114.107.109","94.23.1.18","94.23.1.28","91.121.167.147");
 		if (in_array($this->author_ip,$banned_ips)) return true;
 		// Heuristic: asdfasdf detector
 		// idea: words with no vowels? OR just look at submitter
-		if ($this->author_url == $this->author_name && $this->author_email == '') {
+		if (strlen($this->author_url) > 0 && strpos($this->author_url,'/') === false && $this->author_url == $this->author_name && $this->author_email == '') {
 			// url == name
+			// don't need this fancyness, they are all spammers!
+			return true;
 			if (preg_match("@^[A-Za-z0-9]+\s+<a href=\"http://([A-Za-z0-9]+)[.]com[/]\">\\1</a>$@",$this->body)) return true;
+			if (preg_match("@\\[url=(?:http://)?([A-Za-z0-9]+)[.]com[/]]\\1@",$this->body)) return true;
+			if (preg_match("@\\[link=(?:http://)?([A-Za-z0-9]+)[.]com[/]]\\1@",$this->body)) return true;
 		}
 		// weirdness in author name
 		if (preg_match('@<a href=|\[url[=\]]@i',$this->author_name . ' ' . $this->author_url . ' ' . $this->author_email)) return true;
