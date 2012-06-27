@@ -32,6 +32,7 @@ class Cache {
 
 		// check for not-modified header?
 		if ($mtime > 0 && $mtime >= Cache::$last_modified) {
+			header('Content-Type: text/html; charset=utf-8');
 			readfile($cache_file);
 			exit();
 		} else {
