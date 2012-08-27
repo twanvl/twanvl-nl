@@ -27,13 +27,19 @@ class BaseFormat {
 class WikiFormat extends BaseFormat {
 	public $html; // output
 	public $language; // programming language to use
+	public $default_block_type = 'haskell';
 	private $state = '';
 	private $pending = '';
 	private $pending_linklist = array();
 	public $trusted = false; // do we trust the source of the code? If true we allow file access and php execution
 	
 	public function __construct() {
-		$this->language = new HaskellFormat();
+		if ($this->default_block_type == 'haskell') {
+			$this->language = new HaskellFormat();
+		} elseif ($this->default_block_type == 'agda') {
+			$this->language = new AgdaFormat();
+		} else {
+		}
 	}
 	
 	public static function format($lines, $trusted = false) {
@@ -89,10 +95,11 @@ class WikiFormat extends BaseFormat {
 			// ignore the following block
 			$this->state_switch('','');
 			$this->state = 'IGNORE';
-		} elseif (preg_match('@^\]>\s*--\s*BLOCK[:]?\s*(\S+)-continue$@',$line, $ma)){
+		} elseif (preg_match('@^\]>\s*--\s*(?:BLOCK|TYPE|LANGUAGE)[:]?\s*(\S+)-continue$@',$line, $ma)){
 			$this->state = '<pre class="'.$ma[1].'-continue';
-		} elseif (preg_match('@^\]?>\s*--\s*BLOCK[:]?\s*(\S+)$@',$line, $ma)){
+		} elseif (preg_match('@^\]?>\s*--\s*(?:BLOCK|TYPE|LANGUAGE)[:]?\s*(\S+)$@',$line, $ma)){
 			// language of the following block
+			if ($ma[1] == 'agda') $this->language = new AgdaFormat();
 			$this->state_switch('<pre class="'.htmlspecialchars($ma[1]).'">','</pre>');
 		} elseif (preg_match('@^[>] ?(.*)$@',$line,$ma)) {
 			// source code
@@ -100,8 +107,8 @@ class WikiFormat extends BaseFormat {
 				// ignore this block, for literal Haskell files
 				return;
 			}
-			if (strpos($this->state,'<pre class="haskell') === false) {
-				$this->state_switch('<pre class="haskell">','</pre>');
+			if (!preg_match('@<pre class="(haskell|agda)@',$this->state)) {
+				$this->state_switch('<pre class="'.$this->default_block_type.'">','</pre>');
 			}
 			if (trim($ma[1]) === '') {
 				$this->html .= "<div class='empty-line'></div>\n";
@@ -110,8 +117,7 @@ class WikiFormat extends BaseFormat {
 			}
 		} elseif (preg_match('@^\]> ?(.*)$@',$line,$ma)) {
 			// source code, no formating
-			if (strpos($this->state,'<pre class="haskell') !== false) {
-			} else {
+			if (!preg_match('@<pre class="(haskell|agda)@',$this->state)) {
 				$this->state_switch('<pre class="ghci">','</pre>');
 			}
 			$this->html .= WikiFormat::format_code($ma[1]) . "\n";

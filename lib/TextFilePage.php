@@ -54,6 +54,8 @@ class TextFilePage extends Page {
 				$this->source_link = "<a href='$this->path'>$ma[2]</a>";
 			} elseif (preg_match('@^(?:show[ _-]?)?(comments):\s*(.*)@',$attr,$ma)) {
 				$this->show_comments = true;
+			} elseif (preg_match('@^literate style: latex@',$attr,$ma)) {
+				$data = unlit_latex($data);
 			} else if ($attr != '') {
 				$this->title = $attr;
 				break;
@@ -75,3 +77,22 @@ class TextFilePage extends Page {
 function to_bool($x) {
 	return $x=='true' || $x=='yes' || (int)$x;
 }
+
+// convert latex style literate code to bird-tack style
+function unlit_latex($lines) {
+	$in_code = false;
+	$out = array();
+	foreach ($lines as $l) {
+		if ($l == "\\begin{code}" || $l == "\\begin{pseudocode}") {
+			$in_code = true;
+		} elseif ($l == "\\end{code}" || $l == "\\end{pseudocode}") {
+			$in_code = false;
+		} elseif ($in_code) {
+			$out []= '> ' . $l;
+		} else {
+			$out []= $l;
+		}
+	}
+	return $out;
+}
+

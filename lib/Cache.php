@@ -5,11 +5,12 @@
 // -----------------------------------------------------------------------------
 
 class Cache {
-	private static $capturing = null;
 	private static $last_modified = 0;
+	private static $aborted = false;
 	
 	function disable() {
 		Cache::$last_modified = 1e100;
+		Cache::$aborted = true;
 	}
 	function depend_on_file($path) {
 		Cache::depend_on_time(@filemtime($path));
@@ -43,6 +44,14 @@ class Cache {
 
 	// this function should be private, but it can't be, because it is used as a callback
 	static function do_end($buffer,$mode) {
+		// don't cache when there were errors
+		if (Cache::$aborted) {
+			return false;
+		}
+		$error = error_get_last();
+		if ($error && $error['type'] & (E_PARSE | E_COMPILE_ERROR)) {
+			return false;
+		}
 		// write contents to file
 		chdir(dirname($_SERVER['SCRIPT_FILENAME']));
 		file_put_contents(Cache::cache_file(),$buffer);

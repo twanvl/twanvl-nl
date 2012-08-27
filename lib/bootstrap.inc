@@ -21,9 +21,11 @@ require_once('./lib/config.php');
 // -----------------------------------------------------------------------------
 
 function fancy_exception_handler($e) {
+    Cache::disable();
 	HtmlTemplate::write(Page::error_page_unhandled_exception($e));
 	exit();
 }
 
 set_exception_handler('fancy_exception_handler');
 error_reporting(E_ALL);
+

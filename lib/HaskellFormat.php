@@ -38,6 +38,9 @@ class HaskellFormat {
 		// Haskell lexer goes here
 		global $haskell_lang;
 		$lex = new Lexer($haskell_lang, $code);
+		return HaskellFormat::do_format($lex);
+    }
+    protected function do_format($lex) {
 		$out = '';
 		while (!$lex->end()) {
 			list($type,$match) = $lex->next();
