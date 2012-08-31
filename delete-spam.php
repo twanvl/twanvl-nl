@@ -9,6 +9,7 @@ $p = new Page('');
 $p->title = "Re spam filter";
 $p->body = '';
 
+// Do actual deletion/hiding
 if (isset($_POST['confirm'])) {
 	// Delete/hide spam
 	$total_change = 0;
@@ -27,6 +28,7 @@ if (isset($_POST['confirm'])) {
 	$p->body .= "Hidden $total_change comments";
 }
 
+// Build HTML table of all comments
 $num_new_spam = 0;
 
 $p->body .= '<table class="spam">';
