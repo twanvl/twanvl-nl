@@ -65,7 +65,7 @@ class Comments {
 		return true;
 	}
 	
-	private static function write_comment($fp,$comment) {
+	static function write_comment($fp,$comment) {
 		foreach(get_object_vars($comment) as $k => $v) {
 //			echo "[$k](",serialize_field($v),")<br>\n";
 			fprintf($fp,"%s: %s\n",$k,serialize_field($v));
