@@ -37,11 +37,24 @@ if (strlen(@$_REQUEST['author_email']) > 0 && strpos(@$_REQUEST['author_email'],
 if (strlen(@$_REQUEST['body']) < 4) {
 	$invalid_fields['body'] = "Enter a message";
 }
+// is it spam?
+$spam = false;
 if ($comment->is_spam()) {
 	$invalid_fields[''] = "Go away spammer!.";
+	$spam = true;
 }
 if (!Captcha::is_answered()) {
 	$invalid_fields['captcha'] = "Go away spammer!.";
+	$spam = true;
+}
+
+if ($spam) {
+	// log spam attempts
+	require_once('lib/Comments.php');
+	$fp = fopen('comments/spam-attempt-log.txt','at');
+	if (!Captcha::is_answered()) $comment->invalid_captcha = true;
+	Comments::write_comment($fp,$comment);
+	fclose($fp);
 }
 
 $ok = count($invalid_fields) == 0;
