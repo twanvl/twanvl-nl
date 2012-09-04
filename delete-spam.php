@@ -4,6 +4,9 @@ require_once('lib/bootstrap.inc');
 
 Authentication::require_admin();
 
+// Settings
+$max_age = time() - 30 * 24 * 60 * 60; // show only comments no older than this
+
 // Show a list of all comments
 $p = new Page('');
 $p->title = "Re spam filter";
@@ -30,6 +33,7 @@ if (isset($_POST['confirm'])) {
 
 // Build HTML table of all comments
 $num_new_spam = 0;
+$more = 0;
 $coms = array();
 foreach (Resolver::find_all_pages('blog') as $page) {
 	$comments = Comments::get_all($page->url,true);
@@ -37,8 +41,9 @@ foreach (Resolver::find_all_pages('blog') as $page) {
 	foreach ($comments as $comment) {
 		$is_spam = ($comment->visible ? 'visible' : 'hidden') . ' ' .
 		           ($comment->is_spam() ? 'spam' : 'nonspam');
-		if ($comment->visible || !$comment->is_spam()) {
-		    $coms []= (object)array(
+		if (($comment->visible || !$comment->is_spam())) {
+		    if (strtotime($comment->date) >= $max_age) {
+				$coms []= (object)array(
 		            'date' => $comment->date,
 		            'html' =>
 			            "<tr>" .
@@ -48,8 +53,11 @@ foreach (Resolver::find_all_pages('blog') as $page) {
 				               ', ' . htmlspecialchars($comment->author_url) .
 				               ', ' . htmlspecialchars($comment->author_ip) .
 				        "<td class='$is_spam summary'>" . htmlspecialchars(substr($comment->body,0,100)) .
-				        "<td class='$is_spam summary'>" . $comment->date,
-		        );
+						"<td class='$is_spam summary'>" . $comment->date,
+				);
+			} else {
+				$more++;
+			}
 		}
         if ($comment->visible && $comment->is_spam()) {
             $num_new_spam++;
@@ -67,6 +75,7 @@ foreach ($coms as $com) {
     $p->body .= $com->html;
 }
 $p->body .= '</table>';
+$p->body .= "Plus $more older comments.";
 
 $p->body .= '<p>';
 $p->body .= "<form method='post' action='delete-spam.php'><input type='hidden' name='confirm' value='1'><input type='submit' value='Be gone, all $num_new_spam of you.'></form>";
