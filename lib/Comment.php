@@ -170,6 +170,7 @@ function message_attributes($text) {
 
 	// garbage detector
 	$attrs['consonants-5'] = preg_match('@[bcdfghjklmnpqrstvwxz]{5}@',strtolower($text));
+	$attrs['utf8-bom'] = strpos($text,"\xEF\xBB\xBF") !== false;
 	// TODO: more
 
 	// words
@@ -211,7 +212,7 @@ function message_attributes($text) {
 		'online','dating','cheap','sunglas','Nike','air','jordan','jacket','shoes','casino','porno','sex','viagra','vagina','penis','escort',
 		'buy','generic','uggs','women','cheap','monster','solo','factory','bag','chanel','vuiton','outlet','consumer','debt',
 		'comonad','haskell','categor','type','combinator','library',
-		'<img','[img','[url','[link','/','@','[','<','+','(',')','((','))','>',"\n>",'++','??','<ul>','<li>','<tt>','<pre',"\n>",
+		'<img','[img','[url','[/URL','[link','/','@','[','<','+','(',')','((','))','>',"\n>",'++','??','<ul>','<li>','<tt>','<pre',"\n>",
 		'monad',
 		'.cs.','.edu','/~',
 	);
