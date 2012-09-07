@@ -18,15 +18,17 @@ if (isset($_POST['confirm'])) {
 	$total_change = 0;
 	foreach (Resolver::find_all_pages('blog') as $page) {
 		$comments = Comments::get_all($page->url,true);
-		$change = false;
+		$page_change = false;
 		foreach ($comments as $comment) {
-			if ($comment->is_spam() && $comment->visible) {
+			if (isset($_POST[urlencode("del-" . $page->url . '#' . $comment->id)]) && $comment->visible) {
 				$comment->visible = false;
-				$change = true;
+				$page_change = true;
 				$total_change++;
 			}
 		}
-		Comments::set_all($page->url,$comments);
+		if ($page_change) {
+			Comments::set_all($page->url,$comments);
+		}
 	}
 	$p->body .= "Hidden $total_change comments";
 }
@@ -46,6 +48,7 @@ foreach (Resolver::find_all_pages('blog') as $page) {
 				$coms []= (object)array(
 		            'date' => $comment->date,
 		            'html' => "<tr>"
+			            . "<td><input type='checkbox' title='delete this comment' name='".urlencode("del-" . $page->url . '#' . $comment->id)."'".($comment->is_spam()?" checked":'').">"
 			            . "<td><a href='".htmlspecialchars($page->url)."'>" . $page->title . '</a>'
 				        . "<td class='$is_spam summary'>" . htmlspecialchars($comment->author_name)
 							. ', ' . htmlspecialchars($comment->author_email)
@@ -70,6 +73,7 @@ function compare_date($a,$b) {
 }
 usort($coms,'compare_date');
 
+$p->body .= "<form method='post' action='delete-spam.php'>";
 $p->body .= '<table class="spam">';
 foreach ($coms as $com) {
     $p->body .= $com->html;
@@ -78,6 +82,8 @@ $p->body .= '</table>';
 $p->body .= "Plus $more older comments.";
 
 $p->body .= '<p>';
-$p->body .= "<form method='post' action='delete-spam.php'><input type='hidden' name='confirm' value='1'><input type='submit' value='Be gone, all $num_new_spam of you.'></form>";
+//$p->body .= "<label><input type='checkbox' name='delete-auto' checked> delete all $num_new_spam that are now classified as spam</label><br>";
+$p->body .= "<input type='hidden' name='confirm' value='1'>";
+$p->body .= "<input type='submit' value='Be gone'></form>";
 HtmlTemplate::write($p);
 
