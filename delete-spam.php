@@ -9,7 +9,7 @@ $max_age = time() - 30 * 24 * 60 * 60; // show only comments no older than this
 
 // Show a list of all comments
 $p = new Page('');
-$p->title = "Re spam filter";
+$p->title = "Re spam-filter";
 $p->body = '';
 
 // Do actual deletion/hiding
@@ -42,18 +42,18 @@ foreach (Resolver::find_all_pages('blog') as $page) {
 		$is_spam = ($comment->visible ? 'visible' : 'hidden') . ' ' .
 		           ($comment->is_spam() ? 'spam' : 'nonspam');
 		if (($comment->visible || !$comment->is_spam())) {
-		    if (strtotime($comment->date) >= $max_age) {
+		    if ($comment->visible == $comment->is_spam() || strtotime($comment->date) >= $max_age) {
 				$coms []= (object)array(
 		            'date' => $comment->date,
-		            'html' =>
-			            "<tr>" .
-			            "<td><a href='".htmlspecialchars($page->url)."'>" . $page->title . '</a>' .
-				        "<td class='$is_spam summary'>" . htmlspecialchars($comment->author_name) .
-				               ', ' . htmlspecialchars($comment->author_email) .
-				               ', ' . htmlspecialchars($comment->author_url) .
-				               ', ' . htmlspecialchars($comment->author_ip) .
-				        "<td class='$is_spam summary'>" . htmlspecialchars(substr($comment->body,0,100)) .
-						"<td class='$is_spam summary'>" . $comment->date,
+		            'html' => "<tr>"
+			            . "<td><a href='".htmlspecialchars($page->url)."'>" . $page->title . '</a>'
+				        . "<td class='$is_spam summary'>" . htmlspecialchars($comment->author_name)
+							. ', ' . htmlspecialchars($comment->author_email)
+							. ', ' . htmlspecialchars($comment->author_url)
+							. ', ' . htmlspecialchars($comment->author_ip)
+				        . "<td class='$is_spam summary'>" . htmlspecialchars(substr($comment->body,0,100))
+						. "<td class='$is_spam summary'>" . $comment->date
+						. "<td class='$is_spam summary'>" . $comment->spam_score()
 				);
 			} else {
 				$more++;

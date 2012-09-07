@@ -48,10 +48,10 @@ if (!Captcha::is_answered()) {
 	$spam = true;
 }
 
-if ($spam) {
+if (LOG_SPAM_ATTEMPTS && $spam) {
 	// log spam attempts
 	require_once('lib/Comments.php');
-	$fp = fopen('comments/spam-attempt-log.txt','at');
+	$fp = fopen(SPAM_ATTEMPT_FILE,'at');
 	if (!Captcha::is_answered()) $comment->invalid_captcha = true;
 	Comments::write_comment($fp,$comment);
 	fclose($fp);

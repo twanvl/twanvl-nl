@@ -688,4 +688,14 @@ pre .empty-line {
 .spam .first td {
 	border-top: 2px solid black;
 }
+.spam .was-hidden {
+	background: rgb(255,128,128);
+}
+.spam .was-visible {
+	background: rgb(128,255,128);
+}
+.spam .was-unknown {
+	background: rgb(192,192,255);
+}
+
 

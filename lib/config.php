@@ -15,6 +15,10 @@ define('CACHE_DIR', '_cache');
 
 define('CAPTCHA_SECRET', 'my-secret');
 
+define('SPAM_FILTER_FILE', 'comments/spam-filter.dat');
+define('SPAM_ATTEMPT_FILE', 'comments/spam-attempt-log.txt');
+define('LOG_SPAM_ATTEMPTS', false);
+
 // -----------------------------------------------------------------------------
 // Authentication
 // -----------------------------------------------------------------------------
