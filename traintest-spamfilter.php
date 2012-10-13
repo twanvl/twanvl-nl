@@ -6,8 +6,8 @@ Authentication::require_admin();
 set_time_limit(0);
 
 // Settings
-$max_age = time() - 30 * 24 * 60 * 60; // all recent comments are spam
-$min_age = time() - 0.5 * 24 * 60 * 60; // except more recent than this
+$max_age = time() - 0 * 24 * 60 * 60; // all recent comments are spam
+$min_age = time() - 0 * 24 * 60 * 60; // except more recent than this
 $num_folds = 5;
 $classifier = 'logistic_regression';
 
@@ -88,21 +88,22 @@ $p->body .= '<h2>Order by spam score</h2>';
 $p->body .= '<table class="spam">';
 foreach ($comments as $comment) {
 	$is_spam = $comment->label==0 ? 'was-visible' : ($comment->label==0.5 ? 'was-unknown' : 'was-hidden');
-	$influence = '';
+	$influence = '<table>';
 	foreach($comment->influence as $k => $s) {
-		$influence .= htmlspecialchars($k).":$s\n";
+		$influence .= '<tr><td>'.htmlspecialchars($k)."<td>$s\n";
 	}
+	$influence .= '</table>';
 	$p->body .=
-		"<tr>"
+		"<tr class='$is_spam'>"
 		//. "<td><a href='".htmlspecialchars($page->url)."'>" . $page->title . '</a>'
-		. "<td class='$is_spam'>" . htmlspecialchars($comment->author_name)
+		. "<td>" . htmlspecialchars($comment->author_name)
 			. ', ' . htmlspecialchars($comment->author_email)
 			. ', ' . htmlspecialchars($comment->author_url)
 			. ', ' . htmlspecialchars($comment->author_ip)
-		. "<td class='$is_spam'>" . htmlspecialchars(substr($comment->body,0,100))
-		. "<td class='$is_spam'>" . $comment->date
-		. "<td class='$is_spam'>" . $comment->score
-		//. "<td class='$is_spam'>" . $influence
+		. "<td>" . htmlspecialchars(substr($comment->body,0,100))
+			. '<div class="influence">' . $influence . '</div>'
+		. "<td>" . $comment->date
+		. "<td>" . $comment->score
 	;
 }
 $p->body .= '</table>';

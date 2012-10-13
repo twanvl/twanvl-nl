@@ -689,13 +689,38 @@ pre .empty-line {
 	border-top: 2px solid black;
 }
 .spam .was-hidden {
+	background: rgb(255,192,192);
+}
+.spam .was-hidden:hover {
 	background: rgb(255,128,128);
 }
 .spam .was-visible {
+	background: rgb(192,255,192);
+}
+.spam .was-visible:hover {
 	background: rgb(128,255,128);
 }
 .spam .was-unknown {
 	background: rgb(192,192,255);
 }
+.spam .was-unknown:hover {
+	background: rgb(160,160,255);
+}
 
+.spam .influence {
+	display: none;
+	position: relative;
+}
+.spam .influence table {
+	position: absolute;
+	background: #ffd;
+	border: #886;
+	top: 0em;
+	left: 1em;
+	width: 500px;
+	font-size: 70%;
+}
+.spam tr:hover .influence {
+	display: block;
+}
 

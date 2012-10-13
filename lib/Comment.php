@@ -82,13 +82,15 @@ class Comment {
 
 	// slightly less simple spam filter
 	function spamfilter_attributes() {
-		$all = $this->body . ' ' . $this->author_url . ' ' . $this->author_name . ' ' . $this->author_email;
+		$all = $this->body;
 		// don't double-count <a href=""> urls
 		$all = preg_replace('@<a href="([^"]*)">\1</a>@',"\\1",$all);
 		$attrs = message_attributes($all);
+		$attrs2 = message_attributes($this->author_name . ' ' . $this->author_url . ' ' . $this->author_email);
+		foreach ($attrs2 as $k => $v) $attrs['author-'.$k] = $v;
 		$attrs['author-name='.$this->author_name] = 1;
-		$attrs['author-url='.$this->author_url] = 1;
-		$attrs['author-email='.$this->author_email] = 1;
+		if ($this->author_url !== '') $attrs['author-url='.$this->author_url] = 1;
+		if ($this->author_email !== '') $attrs['author-email='.$this->author_email] = 1;
 		$attrs['author-name-eq-url'] = $this->author_name == $this->author_url;
 		if (preg_match('@[.]([a-z]+)/?$@',$this->author_url,$ma)) {
 			$attrs['author-url$=.'.$ma[1]] = 1;
@@ -96,7 +98,21 @@ class Comment {
 		if (preg_match('@www@',$this->author_url,$ma)) {
 			//$attrs['author-url~=.'.$ma[0]] = 1;
 		}
-		$attrs['author-email-dots5'] = strlen(preg_filter('@[.]@','x',$this->author_email)) >= 5;
+		$attrs['author-email-dots5'] = preg_match_all('@[.]@',$this->author_email,$ignore) >= 5;
+		// words of the author name re-appear in the email or url
+		$name_words = preg_split('@(?:\s|[\@.,/-_="\'])+@',strtolower($this->author_name));
+		foreach ($name_words as $i => $nw) {
+			if (strlen($nw) > 2) {
+				if (stripos($this->author_email,$nw) !== false && $this->author_name != $this->author_email) {
+					$attrs['author-name-in-email'] = 1;
+					$attrs['author-name'.$i.'-in-email'] = 1;
+				}
+				if (stripos($this->author_url,$nw) !== false && $this->author_name != $this->author_url) {
+					$attrs['author-name-in-url'] = 1;
+					$attrs['author-name'.$i.'-in-url'] = 1;
+				}
+			}
+		}
 		return $attrs;
 	}
 	
@@ -154,7 +170,7 @@ function message_attributes($text) {
 		// urls that point to a root domain
 		// words in urls
 		foreach ($urls[0] as $u) {
-			foreach (preg_split('@(?:\s|[\@.,/-_="\'])+@',$plain) as $w) {
+			foreach (preg_split('@(?:\s|[\@.,/_="\'-])+@',$plain) as $w) {
 				if (strlen($w) > 2) {
 					$attrs['urlword-'.strtolower($w)] = 1;
 				}
@@ -209,11 +225,12 @@ function message_attributes($text) {
 
 	// sub-words
 	$subwords = array(
-		'online','dating','cheap','sunglas','Nike','air','jordan','jacket','shoes','casino','porno','sex','viagra','vagina','penis','escort',
-		'buy','generic','uggs','women','cheap','monster','solo','factory','bag','chanel','vuiton','outlet','consumer','debt',
+		'online','dating','cheap','sunglas','Nike','air','jordan','jacket','jersey','shoes','casino','porno','sex','viagra','vagina','penis','escort','girls',
+		'buy','generic','uggs','ugg boot','woman','women','cheap','monster','solo','factory','bag','chanel','vuiton','outlet','consumer','debt','pimples','discount','payment',' sell','replica','urgent',
 		'comonad','haskell','categor','type','combinator','library',
-		'<img','[img','[url','[/URL','[link','/','@','[','<','+','(',')','((','))','>',"\n>",'++','??','<ul>','<li>','<tt>','<pre',"\n>",
-		'monad',
+		'monad','monoid',
+		'<img','[img','[url','[/URL','[link','/',' @','[','<','+','(',')','((','))','>',"\n>",'++','??','<ul>','<li>','<tt>','<pre',"\n>",
+		'<a href=>',
 		'.cs.','.edu','/~',
 	);
 	foreach($subwords as $w) {
