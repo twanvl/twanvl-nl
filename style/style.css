@@ -723,4 +723,7 @@ pre .empty-line {
 .spam tr:hover .influence {
 	display: block;
 }
+#body .spam .first-past-threshold {
+    border-top: 10px solid rgb(100,100,255);
+}
 

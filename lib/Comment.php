@@ -74,8 +74,7 @@ class Comment {
 		//if (strlen($this->body) > iconv_strlen($this->body, 'UTF-8//TRANSLIT')) return true;
 		//if (preg_match('@��@',$this->body . ' ' . $this->author_url . ' ' . $this->author_name)) return true;
 		// Use trained spamfilter
-		$spam_threshold = 0.9;
-		if ($this->spam_score() > $spam_threshold) return true;
+		if ($this->spam_score() > (double)SPAM_THRESHOLD) return true;
 		// Otherwise not spam
 		return false;
 	}

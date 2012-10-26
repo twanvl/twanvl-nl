@@ -33,80 +33,100 @@ foreach (Resolver::find_all_pages('blog') as $page) {
 	}
 }
 
-// Cross-validation set
-srand(12345);
-shuffle($comments);
-for ($fold = 0 ; $fold < $num_folds ; ++$fold) {
-	// train
-	$data = array();
-	for ($i = 0 ; $i < count($comments) ; ++$i) {
-		if ($i % $num_folds == $fold) continue;
-		if ($comments[$i]->label == 0.5) continue;
-		$data []= $comments[$i];
-	}
-	$filter = SpamFilter::make($classifier);
-	$filter->train($data);
+// -----------------------------------------------------------------------------
+// Cross validate to estimate performance
+// -----------------------------------------------------------------------------
+
+$validate = !isset($_POST['store']);
+$show_attributes = $validate;
+
+if ($validate) {
+    // Cross-validation set
+    srand(12345);
+    shuffle($comments);
+    for ($fold = 0 ; $fold < $num_folds ; ++$fold) {
+	    // train
+	    $data = array();
+	    for ($i = 0 ; $i < count($comments) ; ++$i) {
+		    if ($i % $num_folds == $fold) continue;
+		    if ($comments[$i]->label == 0.5) continue;
+		    $data []= $comments[$i];
+	    }
+	    $filter = SpamFilter::make($classifier);
+	    $filter->train($data);
 	
-	// test
-	for ($i = 0 ; $i < count($comments) ; ++$i) {
-		if ($i % $num_folds != $fold) continue;
-		$comment = $comments[$i];
-		$comment->score = $filter->classify($comment->attrs);
-		// which features influence the score?
-		$influence = array();
-		foreach($comment->attrs as $k => $v) {
-			if (!$v) continue;
-			$w = $filter->weight($k);
-			if ($w) $influence[$k] = $w;
-		}
-		asort($influence);
-		$comment->influence = $influence;
-	}
-}
-function compare_score($a,$b) {
-    return $a->score == $b->score ? 0 : $a->score < $b->score ? 1 : -1;
-}
-usort($comments,'compare_score');
+	    // test
+	    for ($i = 0 ; $i < count($comments) ; ++$i) {
+		    if ($i % $num_folds != $fold) continue;
+		    $comment = $comments[$i];
+		    $comment->score = $filter->classify($comment->attrs);
+		    // which features influence the score?
+		    $influence = array();
+		    foreach($comment->attrs as $k => $v) {
+			    if (!$v) continue;
+			    $w = $filter->weight($k);
+			    if ($w) $influence[$k] = $w;
+		    }
+		    asort($influence);
+		    $comment->influence = $influence;
+	    }
+    }
+    function compare_score($a,$b) {
+        return $a->score == $b->score ? 0 : $a->score < $b->score ? 1 : -1;
+    }
+    usort($comments,'compare_score');
 
-// Calculate AUC
-$num_spam = 0;
-$num_ham  = 0;
-$error = 0;
-foreach($comments as $comment) {
-	if ($comment->label == 1) {
-		$num_spam++;
-		$error += $num_ham;
-	} elseif ($comment->label == 0) {
-		$num_ham++;
-	}
-}
-$auc = 1 - ($error) / ($num_spam*$num_ham);
-$p->body .= "AUC: $auc,  errors: $error\n";
+    // Calculate AUC
+    $num_spam = 0;
+    $num_ham  = 0;
+    $error = 0;
+    foreach($comments as $comment) {
+	    if ($comment->label == 1) {
+		    $num_spam++;
+		    $error += $num_ham;
+	    } elseif ($comment->label == 0) {
+		    $num_ham++;
+	    }
+    }
+    $auc = 1 - ($error) / ($num_spam*$num_ham);
+    $p->body .= "AUC: $auc,  errors: $error\n";
 
-// Build HTML table of all comments
-$p->body .= '<h2>Order by spam score</h2>';
-$p->body .= '<table class="spam">';
-foreach ($comments as $comment) {
-	$is_spam = $comment->label==0 ? 'was-visible' : ($comment->label==0.5 ? 'was-unknown' : 'was-hidden');
-	$influence = '<table>';
-	foreach($comment->influence as $k => $s) {
-		$influence .= '<tr><td>'.htmlspecialchars($k)."<td>$s\n";
-	}
-	$influence .= '</table>';
-	$p->body .=
-		"<tr class='$is_spam'>"
-		//. "<td><a href='".htmlspecialchars($page->url)."'>" . $page->title . '</a>'
-		. "<td>" . htmlspecialchars($comment->author_name)
-			. ', ' . htmlspecialchars($comment->author_email)
-			. ', ' . htmlspecialchars($comment->author_url)
-			. ', ' . htmlspecialchars($comment->author_ip)
-		. "<td>" . htmlspecialchars(substr($comment->body,0,100))
-			. '<div class="influence">' . $influence . '</div>'
-		. "<td>" . $comment->date
-		. "<td>" . $comment->score
-	;
+    // Build HTML table of all comments
+    $p->body .= '<h2>Order by spam score</h2>';
+    $p->body .= '<table class="spam">';
+    $prev_score = 0;
+    foreach ($comments as $comment) {
+	    $is_spam = $comment->label==0 ? 'was-visible' : ($comment->label==0.5 ? 'was-unknown' : 'was-hidden');
+	    $influence = '<table>';
+	    foreach($comment->influence as $k => $s) {
+		    $influence .= '<tr><td>'.htmlspecialchars($k)."<td>$s\n";
+	    }
+	    $influence .= '</table>';
+
+	    if ($comment->score <= SPAM_THRESHOLD && $prev_score >= SPAM_THRESHOLD) {
+	        $is_spam .= ' first-past-threshold';
+	    }
+	    $prev_score = $comment->score;
+	
+	    $p->body .=
+		    "<tr class='$is_spam'>"
+		    //. "<td><a href='".htmlspecialchars($page->url)."'>" . $page->title . '</a>'
+		    . "<td>" . htmlspecialchars($comment->author_name)
+			    . ', ' . htmlspecialchars($comment->author_email)
+			    . ', ' . htmlspecialchars($comment->author_url)
+			    . ', ' . htmlspecialchars($comment->author_ip)
+		    . "<td>" . htmlspecialchars(substr($comment->body,0,100))
+			    . '<div class="influence">' . $influence . '</div>'
+		    . "<td>" . $comment->date
+		    . "<td>" . $comment->score
+	    ;
+    }
+    $p->body .= '</table>';
 }
-$p->body .= '</table>';
+
+// -----------------------------------------------------------------------------
+// Train on all data
+// -----------------------------------------------------------------------------
 
 // Train on all data
 $filter = SpamFilter::make($classifier);
@@ -118,27 +138,36 @@ for ($i = 0 ; $i < count($comments) ; ++$i) {
 $filter->train($data);
 
 // Store trained spamfilter
-SpamFilter::save($filter);
-
-// Best/worst spam attributes
-$attrs = array();
-$s = 1; $n = 2;
-foreach ($filter->all_weights() as $k => $v) {
-	$attrs[]=(object)array(
-		'score' => $v,
-		'html'  => "<tr><td>".htmlspecialchars($k)."<td>$v"
-	);
+$p->body .= '<h2>Store spamfilter</h2>';
+if (isset($_POST['store'])) {
+    SpamFilter::save($filter);
+    $p->body .= "Spamfilter was stored successfully";
+} else {
+    $p->body .= '<form action="traintest-spamfilter.php" method="post">';
+    $p->body .= '<input type="hidden" name="store" value="1">';
+    $p->body .= '<input type="submit" value="Store spamfilter">';
+    $p->body .= '</form>';
 }
 
-usort($attrs,'compare_score');
-$p->body .= '<h2>Spam/ham attributes</h2>';
-$p->body .= '<table class="spam">';
-foreach ($attrs as $attr) {
-	$p->body .= $attr->html;
+// List best/worst spam attributes
+if ($show_attributes) {
+    $attrs = array();
+    $s = 1; $n = 2;
+    foreach ($filter->all_weights() as $k => $v) {
+	    $attrs[]=(object)array(
+		    'score' => $v,
+		    'html'  => "<tr><td>".htmlspecialchars($k)."<td>$v"
+	    );
+    }
+
+    usort($attrs,'compare_score');
+    $p->body .= '<h2>Spam/ham attributes</h2>';
+    $p->body .= '<table class="spam">';
+    foreach ($attrs as $attr) {
+	    $p->body .= $attr->html;
+    }
+    $p->body .= '</table>';
 }
-$p->body .= '</table>';
-
-
 
 HtmlTemplate::write($p);
 
