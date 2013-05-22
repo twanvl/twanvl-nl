@@ -385,6 +385,9 @@ tt.complex {
 #body pre.mse-script {
 	background-image: url(codeblock-mse-script.png);
 }
+#body pre.agda {
+	background-image: url(codeblock-agda.png);
+}
 #body pre.haskell-plain {
 	border: 0;
 	padding: 0;
@@ -428,6 +431,10 @@ pre .empty-line {
 }
 .varop {
 	color:				rgb(128,0,0);
+}
+.hole {
+	color:				rgb(0,0,0);
+	background:			rgb(180,255,180);
 }
 
 #comments .conid, #comments .conop, #comments .listcon {

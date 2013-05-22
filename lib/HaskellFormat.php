@@ -34,13 +34,20 @@ class Lexer {
 // -----------------------------------------------------------------------------
 
 class HaskellFormat {
-	public static function format($code) {
-		// Haskell lexer goes here
-		global $haskell_lang;
-		$lex = new Lexer($haskell_lang, $code);
+    private $lang;
+    public function __construct($lang = null) {
+        if ($lang === null) {
+		    global $haskell_lang;
+	        $this->lang = $haskell_lang;
+	    } else {
+            $this->lang = $lang;
+        }
+    }
+	public function format($code) {
+		$lex = new Lexer($this->lang, $code);
 		return HaskellFormat::do_format($lex);
     }
-    protected function do_format($lex) {
+    protected static function do_format($lex) {
 		$out = '';
 		while (!$lex->end()) {
 			list($type,$match) = $lex->next();
@@ -54,6 +61,9 @@ class HaskellFormat {
 				$out .= htmlspecialchars($match);
 			} elseif ($type == '!!!') {
 				$out .= substr($match,3,-3);
+			} elseif ($type == 'hole') {
+				$match = '{' . substr($match,2,-2) . '}';
+				$out .= "<span class=\"$type\">$match</span>";
 			} else {
 				if (!$is_html) $match = htmlspecialchars($match);
 				if ($type == 'keyword') {
@@ -69,6 +79,13 @@ class HaskellFormat {
 		}
 		return $out;
 	}
+	public function modify_rule($which, $change) {
+        // "@x@y" becomes "@x change @y"
+	    $rule = $this->lang[$which];
+	    $after = strrpos($rule, $rule[0],1);
+	    $rule = substr($rule,0,$after) . $change . substr($rule,$after);
+	    $this->lang[$which] = $rule;
+    }
 }
 
 // rules for the haskell lexer

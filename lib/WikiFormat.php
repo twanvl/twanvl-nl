@@ -99,8 +99,14 @@ class WikiFormat extends BaseFormat {
 			$this->state = '<pre class="'.$ma[1].'-continue';
 		} elseif (preg_match('@^\]?>\s*--\s*(?:BLOCK|TYPE|LANGUAGE)[:]?\s*(\S+)$@',$line, $ma)){
 			// language of the following block
-			if ($ma[1] == 'agda') $this->language = new AgdaFormat();
+			if ($ma[1] == 'agda') {
+			    $this->language = new AgdaFormat();
+			    $this->default_block_type = 'agda';
+		    }
 			$this->state_switch('<pre class="'.htmlspecialchars($ma[1]).'">','</pre>');
+		} elseif (preg_match('@^\]?>\s*--\s*(?:LEXER)[:]?\s*(\S+)\s*(.*)$@',$line, $ma)){
+			// modify lexer
+			$this->language->modify_rule($ma[1],$ma[2]);
 		} elseif (preg_match('@^[>] ?(.*)$@',$line,$ma)) {
 			// source code
 			if ($this->state == 'IGNORE') {
