@@ -1,2 +1,6 @@
 /_cache/*_dphp*
+/_design
+/_old
+*.wb
+/comments/spam-filter*.dat
 

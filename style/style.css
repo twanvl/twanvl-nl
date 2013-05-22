@@ -682,29 +682,36 @@ pre .empty-line {
 .spam .summary {
 	overflow: hidden;
 }
-.spam .spam.visible {
+.spam .spam.classified-ham {
 	background: red;
 }
-.spam .nonspam.hidden {
+.spam .ham.classified-spam {
 	background: green;
 }
-.spam .spam.hidden {
+.spam .spam.classified-spam {
 	background: rgb(255,192,192);
 	color: rgb(64,64,64);
 }
 .spam .first td {
 	border-top: 2px solid black;
 }
-.spam .was-hidden {
+.spam input[value=1] {
+	background: red;
+}
+.spam input[value=-1] {
+	background: green;
+}
+
+.spam .was-spam {
 	background: rgb(255,192,192);
 }
-.spam .was-hidden:hover {
+.spam .was-spam:hover {
 	background: rgb(255,128,128);
 }
-.spam .was-visible {
+.spam .was-ham {
 	background: rgb(192,255,192);
 }
-.spam .was-visible:hover {
+.spam .was-ham:hover {
 	background: rgb(128,255,128);
 }
 .spam .was-unknown {

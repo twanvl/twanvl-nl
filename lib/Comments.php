@@ -6,7 +6,7 @@
 
 class Comments {
 	/// Return all comments
-	static function get_all($url, $include_hidden = false) {
+	static function get_all($url, $include_spam = false, $include_unknown = true, $include_ham = true) {
 		$lines = @file("comments/$url.wb",FILE_IGNORE_NEW_LINES);
 		if (!$lines) return array();
 		$comments = array();
@@ -32,7 +32,9 @@ class Comments {
 			if (!$c->id) {
 				$c->id = 'comment' . $k;
 			}
-			if (!$include_hidden && !$c->visible) {
+			if (($c->spam_status == 1  && !$include_spam) || 
+			    ($c->spam_status == 0  && !$include_unknown) || 
+			    ($c->spam_status == -1 && !$include_ham)) {
 				unset($comments[$k]);
 			}
 		}

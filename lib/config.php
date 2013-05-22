@@ -20,6 +20,8 @@ define('SPAM_ATTEMPT_FILE', 'comments/spam-attempt-log.txt');
 define('SPAM_THRESHOLD', 0.9);
 define('LOG_SPAM_ATTEMPTS', false);
 
+define('AKISMET_API_KEY','d5225efa60de');
+
 // -----------------------------------------------------------------------------
 // Authentication
 // -----------------------------------------------------------------------------

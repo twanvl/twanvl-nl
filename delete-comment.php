@@ -23,7 +23,7 @@ foreach ($comments as $c) {
 		if ($hide_comment) {
 			// hide instead
 			$c2 = $c;
-			$c2->visible = 0;
+			$c2->spam_status = 1;
 			$other_comments []= $c2;
 		}
 	} else {
