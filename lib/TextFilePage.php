@@ -34,6 +34,7 @@ class TextFilePage extends Page {
 		// load the file
 		$data = file($this->path,FILE_IGNORE_NEW_LINES);
 		// title, and other attributes
+		$language = 'haskell';
 		while (!empty($data)) {
 			$attr = array_shift($data);
 			if (preg_match('@^(title):\s*(.*)@',$attr,$ma)) {
@@ -56,6 +57,8 @@ class TextFilePage extends Page {
 				$this->show_comments = true;
 			} elseif (preg_match('@^literate style: latex@',$attr,$ma)) {
 				$data = unlit_latex($data);
+			} elseif (preg_match('@^language: (.*)@',$attr,$ma)) {
+				$language = ($ma[1]);
 			} else if ($attr != '') {
 				$this->title = $attr;
 				break;
@@ -69,7 +72,7 @@ class TextFilePage extends Page {
 		
 		// body
 		$this->body = '';
-		$this->body .= WikiFormat::format($data, true);
+		$this->body .= WikiFormat::format($data, true, $language);
 	}
 	
 }

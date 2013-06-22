@@ -27,13 +27,14 @@ class BaseFormat {
 class WikiFormat extends BaseFormat {
 	public $html; // output
 	public $language; // programming language to use
-	public $default_block_type = 'haskell';
+	public $default_block_type;
 	private $state = '';
 	private $pending = '';
 	private $pending_linklist = array();
 	public $trusted = false; // do we trust the source of the code? If true we allow file access and php execution
 	
-	public function __construct() {
+	public function __construct($default_block_type = 'haskell') {
+		$this->default_block_type = $default_block_type;
 		if ($this->default_block_type == 'haskell') {
 			$this->language = new HaskellFormat();
 		} elseif ($this->default_block_type == 'agda') {
@@ -42,8 +43,8 @@ class WikiFormat extends BaseFormat {
 		}
 	}
 	
-	public static function format($lines, $trusted = false) {
-		$fmt = new WikiFormat();
+	public static function format($lines, $trusted = false, $default_block_type = 'haskell') {
+		$fmt = new WikiFormat($default_block_type);
 		$fmt->trusted = $trusted;
 		$fmt->add_lines($lines);
 		$fmt->end();
