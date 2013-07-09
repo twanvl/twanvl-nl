@@ -69,9 +69,9 @@ foreach (Resolver::find_all_pages('blog') as $page) {
 				'date' => $comment->date,
 				'html' => "<tr>"
 					//. "<td><input type='checkbox' title='delete this comment' name='".urlencode("del-$id")."'".($comment->is_spam()?" checked":'').">"
-					. "<td><input type='radio' title='spam'      name='".urlencode("spam_status-$id")."' value='1'".($classified_spam?" checked":'').">"
-					.     "<input type='radio' title='undecided' name='".urlencode("spam_status-$id")."' value='0' style='background:blue'>"
-					.     "<input type='radio' title='not spam'  name='".urlencode("spam_status-$id")."' value='-1'".(!$classified_spam?" checked":'').">"
+					. "<td><div style='background:#fdd;'><input type='radio' title='spam'      name='".urlencode("spam_status-$id")."' value='1'".($comment->spam_status==1?" checked":'')."></div>"
+					.     "<div style='background:#ffd;'><input type='radio' title='undecided' name='".urlencode("spam_status-$id")."' value='0'".($comment->spam_status==0?" checked":'')."></div>"
+					.     "<div style='background:#dfd;'><input type='radio' title='not spam'  name='".urlencode("spam_status-$id")."' value='-1'".($comment->spam_status==-1?" checked":'')."></div>"
 					. "<td><a href='".htmlspecialchars($page->url)."'>" . $page->title . '</a>'
 					. "<td class='$is_spam summary'>" . htmlspecialchars($comment->author_name)
 						. ', ' . htmlspecialchars($comment->author_email)
