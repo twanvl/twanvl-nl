@@ -92,8 +92,11 @@ abstract class HtmlTemplate {
 			}
 			$info .= "<div class='tags'>Tags: " . implode(', ', $tags) . '</div>';
 		}
+		if ($page->license_link) {
+			$info .= "<div>" . $page->license_link . "</div>";
+		}
 		if ($page->source_link) {
-			$info .= $page->source_link;
+			$info .= "<div>" . $page->source_link . "</div>";
 		}
 		if ($info) {
 			echo "<div class='page-info'>$info</div>";

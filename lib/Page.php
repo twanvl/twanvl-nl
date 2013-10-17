@@ -19,6 +19,7 @@ class Page {
 	public $show_feedlink = false;
 	public $last_modified = 0;
 	public $source_link = '';
+	public $license_link = DEFAULT_PAGE_LICENSE;
 	private $loaded = false;
 	
 	function __construct($url) {

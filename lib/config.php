@@ -22,6 +22,9 @@ define('LOG_SPAM_ATTEMPTS', false);
 
 define('AKISMET_API_KEY','d5225efa60de');
 
+define('DEFAULT_PAGE_LICENSE','');
+define('DEFAULT_BLOG_LICENSE','License: <a href="http://creativecommons.org/licenses/by/3.0/">CC-BY</a>');
+
 // -----------------------------------------------------------------------------
 // Authentication
 // -----------------------------------------------------------------------------

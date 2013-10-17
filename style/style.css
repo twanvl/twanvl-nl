@@ -582,6 +582,9 @@ pre .empty-line {
 .link-list .thumbnail.icon-np-puzzle {
 	background-image: url(icon-puzzle.png);
 }
+.link-list .thumbnail.icon-prib {
+	background-image: url(icon-prib.png);
+}
 
 .link-list .title {
 	display: block;

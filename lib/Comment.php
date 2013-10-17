@@ -28,6 +28,8 @@ class Comment {
 	public $body_type; // html or wiki
 	public $body;
 	public $spam_status = 0; // 0 : unknown, -1: not spam, +1: spam
+	public $emailed_subscribers = false;
+	public $emailed_moderator = false;
 	
 	function __construct() {
 		$this->body_type = 'wiki';
@@ -45,6 +47,10 @@ class Comment {
 		$akismet->setCommentAuthorURL($this->author_url);
 		$akismet->setCommentContent($this->body);
 		return $akismet->isCommentSpam();
+	}
+	
+	function is_stopforumspam_spam() {
+    	return $this->is_stopforumspam['ip'] || $this->is_stopforumspam['email'] || $this->is_stopforumspam['username'];
 	}
 	
 	// simple spam filter
@@ -134,10 +140,15 @@ class Comment {
 		}
 		
 		// expensive attribute: banned ip by stopforumspam.com
-		if (!isset($this->is_stopforumspam_banned_ip)) {
-			$this->is_stopforumspam_banned_ip = is_stopforumspam_banned_ip($this->author_ip);
-		}
-		$attrs['banned-ip'] = $this->is_stopforumspam_banned_ip;
+	    if (!isset($this->is_stopforumspam_banned) || !$this->is_stopforumspam_banned || !unserialize($this->is_stopforumspam_banned)) {
+	        $banned = is_stopforumspam_banned($this->author_ip, $this->author_email, $this->author_name);
+	        if ($banned) $this->is_stopforumspam_banned = serialize($banned);
+	    } else {
+    	    $banned = unserialize($this->is_stopforumspam_banned);
+	    }
+	    $attrs['banned-ip'] = $banned['ip'];
+	    $attrs['banned-email'] = $banned['email'];
+	    $attrs['banned-username'] = $banned['username'];
 		
 		// expensive attribute: akismet spam score
 		
@@ -153,6 +164,7 @@ class Comment {
 			return $this->body;
 		} else {
 			// TODO: prevent html injection!!!
+			// TODO: add nofolow on links?
 			return WikiFormat::format($this->body);
 		}
 	}
@@ -290,5 +302,21 @@ function is_stopforumspam_banned_ip($ip) {
 		$banned_ips = "\n" . file_get_contents('comments/bannedips.csv') . "\n";
 	}
 	return strpos($banned_ips,"\n$ip\n") !== false;
+}
+
+function is_stopforumspam_banned($ip,$email,$username) {
+    $query = "http://www.stopforumspam.com/api?ip=" . urlencode($ip) .
+             '&email=' . urlencode($email) .
+             '&username=' . urlencode($username);
+    $result = simplexml_load_file($query);
+    if ($result && $result['success'] == 'true') {
+        return array(
+            'ip'       => $result->appears[0] == 'yes',
+            'email'    => $result->appears[1] == 'yes',
+            'username' => $result->appears[2] == 'yes',
+        );
+    } else {
+        return false;
+    }
 }
 

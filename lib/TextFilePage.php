@@ -59,6 +59,8 @@ class TextFilePage extends Page {
 				$data = unlit_latex($data);
 			} elseif (preg_match('@^language: (.*)@',$attr,$ma)) {
 				$language = ($ma[1]);
+			} elseif (preg_match('@^license: (.*)@',$attr,$ma)) {
+				$license = ($ma[1]);
 			} else if ($attr != '') {
 				$this->title = $attr;
 				break;
@@ -69,6 +71,13 @@ class TextFilePage extends Page {
 		if (count($this->tags) && !$this->icon) {
 			foreach ($this->tags as $t) $this->icon .= " icon-" . $t;
 		}
+		if (isset($license)) {
+		    $this->license_link = $license;
+	    } else if ($this->is_blog) {
+	        $this->license_link = DEFAULT_BLOG_LICENSE;
+	    } else {
+	        $this->license_link = DEFAULT_PAGE_LICENSE;
+	    }
 		
 		// body
 		$this->body = '';
