@@ -21,7 +21,7 @@ class Captcha {
 			$this->make_question();
 			$this->answer = '';
 			foreach ($this->answers as $a) {
-				$this->answer .= sha1(CAPTCHA_SECRET . $a) . ',';
+				$this->answer .= Captcha::sign($a) . ',';
 			}
 		}
 	}
@@ -53,8 +53,12 @@ class Captcha {
 	
 	static function is_answered() {
 		$expected = @$_REQUEST['captcha_answer'];
-		$actual = sha1(CAPTCHA_SECRET . strtolower(@$_REQUEST['captcha']));
+		$actual = Captcha::sign(@$_REQUEST['captcha']);
 		return strpos($expected, $actual) !== false;
+	}
+	
+	static function sign($x) {
+		return hash_hmac('sha256', CAPTCHA_SECRET, strtolower($x));
 	}
 }
 
