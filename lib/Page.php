@@ -20,6 +20,7 @@ class Page {
 	public $last_modified = 0;
 	public $source_link = '';
 	public $license_link = DEFAULT_PAGE_LICENSE;
+	public $natural_language = 'en';
 	private $loaded = false;
 	
 	function __construct($url) {

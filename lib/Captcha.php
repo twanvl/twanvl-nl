@@ -13,12 +13,12 @@ class Captcha {
 	public $answer;   // hashed answer
 
 	// construct a new captcha, or get one from the request variables
-	function __construct() {
+	function __construct($type = 'en') {
 		if (Captcha::is_answered()) {
 			$this->question = $_REQUEST['captcha_question'];
 			$this->answer   = $_REQUEST['captcha_answer'];
 		} else {
-			$this->make_question();
+			$this->make_question($type);
 			$this->answer = '';
 			foreach ($this->answers as $a) {
 				$this->answer .= Captcha::sign($a) . ',';
@@ -26,8 +26,8 @@ class Captcha {
 		}
 	}
 	
-	private function make_question() {
-		if (false) {
+	private function make_question($type) {
+		if ($type == 'math') {
 			// a math question
 			$i = rand()%15;
 			$j = rand()%15;
@@ -35,16 +35,23 @@ class Captcha {
 			//$this->question = format_number($i) . " + " . format_number($j) . " = ";
 			$this->answers = array($i+$j);
 		} else {
-			$qa = array(
-				array('q'=>'What greek letter is usually used for anonymous functions?'
-				     ,'a'=>array('lambda','lamda','λ')),
-				array('q'=>'Name of the lazy functional programming language I write about:'
-				     ,'a'=>array('haskell','haskel','agda','coq','ml','ocaml')),
-				array('q'=>'Name a function of type <tt>(a -> b) -> ([a] -> [b])</tt>:'
-				     ,'a'=>array('map','fmap','<$>','(<$>)')),
-				array('q'=>'Name a function of type <tt>[[a]] -> [a]</tt>:'
-				     ,'a'=>array('concat','join','msum','mconcat')),
-			);
+		  if ($type == 'nl') {
+			  $qa = array(
+				  array('q'=>'Noem een studentenklimvereniging in Nijmegen'
+				       ,'a'=>array('nijsac')),
+			  );
+			} else {
+			  $qa = array(
+				  array('q'=>'What greek letter is usually used for anonymous functions?'
+				       ,'a'=>array('lambda','lamda','λ')),
+				  array('q'=>'Name of the lazy functional programming language I write about:'
+				       ,'a'=>array('haskell','haskel','agda','coq','ml','ocaml')),
+				  array('q'=>'Name a function of type <tt>(a -> b) -> ([a] -> [b])</tt>:'
+				       ,'a'=>array('map','fmap','<$>','(<$>)')),
+				  array('q'=>'Name a function of type <tt>[[a]] -> [a]</tt>:'
+				       ,'a'=>array('concat','join','msum','mconcat')),
+			  );
+			}
 			$i = rand()%count($qa);
 			$this->question = $qa[$i]['q'];
 			$this->answers = $qa[$i]['a'];

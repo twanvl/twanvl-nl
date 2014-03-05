@@ -55,10 +55,14 @@ class TextFilePage extends Page {
 				$this->source_link = "<a href='$this->path'>$ma[2]</a>";
 			} elseif (preg_match('@^(?:show[ _-]?)?(comments):\s*(.*)@',$attr,$ma)) {
 				$this->show_comments = true;
+			} elseif (preg_match('@^show[ _-]?date:\s*(.*)@',$attr,$ma)) {
+				$this->show_date = true;
 			} elseif (preg_match('@^literate style: latex@',$attr,$ma)) {
 				$data = unlit_latex($data);
 			} elseif (preg_match('@^language: (.*)@',$attr,$ma)) {
 				$language = ($ma[1]);
+			} elseif (preg_match('@^natural language: (.*)@',$attr,$ma)) {
+				$this->natural_language = ($ma[1]);
 			} elseif (preg_match('@^license: (.*)@',$attr,$ma)) {
 				$license = ($ma[1]);
 			} else if ($attr != '') {

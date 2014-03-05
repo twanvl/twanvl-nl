@@ -110,12 +110,43 @@ abstract class HtmlTemplate {
 	
 	static function write_comments_wb($page) {
 		$comments = Comments::get_all($page->url);
+		// language
+		if ($page->natural_language == 'nl') {
+			$lang = array(
+				'Comment'=>'Reageren',
+				'Reply'=>'Reageren',
+				'Comments'=>'Reacties',
+				'Name'=>'Naam',
+				'Homepage'=>'Homepage',
+				'Email'=>'E-mail',
+				'optional'=>'optioneel',
+				'emailnote'=>'optioneel, blijft geheim',
+				'Subscribe'=>'Houd mij op de hoogte van reacties',
+				'Human'=>'CAPTCHA',
+				'codenote'=>'',
+			);
+		} else {
+			$lang = array(
+				'Comment'=>'Comment',
+				'Comments'=>'Comments',
+				'Reply'=>'Reply',
+				'Name'=>'Name',
+				'Homepage'=>'Homepage',
+				'Email'=>'Email',
+				'optional'=>'optional',
+				'emailnote'=>'optional, will not be revealed',
+				'Subscribe'=>'Subscribe to comments on this article',
+				'Human'=>'Human?',
+				'codenote'=>'Use <tt>&gt; code</tt> for code blocks, <tt>@code@</tt> for inline code. Some html is also allowed.',
+			);
+		}
+		// comments box
 		echo "<div id='comments'>\n";
 		echo " <div id='comments-body'><a name='comments'></a>\n";
 		if (empty($comments)) {
-			echo "  <h2>Comment</h2>\n";
+			echo "  <h2>{$lang['Comment']}</h2>\n";
 		} else {
-			echo "  <h2>Comments</h2>\n";
+			echo "  <h2>{$lang['Comments']}</h2>\n";
 			foreach ($comments as $c) {
 				echo "<div class='post-comment' id='comment-".htmlspecialchars($c->id)."'>\n";
 				echo "<a name='comment-".htmlspecialchars($c->id)."'></a>\n";
@@ -141,26 +172,26 @@ abstract class HtmlTemplate {
 				echo $c->body_html();
 				echo "</div>";
 			}
-			echo "  <h2>Reply</h2>\n";
+			echo "  <h2>$lang[Reply]</h2>\n";
 		}
 		echo "  <form method='post' action='add-comment/$page->url#new-comment'><a name='new-comment'></a>\n";
 		echo "   <input type='hidden' name='url' value='",htmlspecialchars($page->url),"'>\n";
 		echo "   <table>";
 		global $invalid_fields;
-		echo "    <tr><td><label for='author_name' >Name</label    ><td><input type='text'  name='author_name'  id='author_name'  ".(isset($invalid_fields['author_name']) ?'class="invalid" ':'')."value='",request_var('author_name'),"'>\n";
-		echo "    <tr><td><label for='author_url'  >Homepage</label><td><input type='text'  name='author_url'   id='author_url'   ".(isset($invalid_fields['author_url'])  ?'class="invalid" ':'')."value='",request_var('author_url'),"'> <span class='help'>(optional)</span>\n";
-		echo "    <tr><td><label for='author_email'>Email</label   ><td><input type='email' name='author_email' id='author_email' ".(isset($invalid_fields['author_email'])?'class="invalid" ':'')."value='",request_var('author_email'),"'> <span class='help'>(optional, will not be revealed)</span>\n";
-		echo "    <tr><td><td><label><input type='checkbox' name='author_subscribe' ",request_var_check('author_subscribe'),"> Subscribe to comments on this article</label>\n";
+		echo "    <tr><td><label for='author_name' >$lang[Name]</label    ><td><input type='text'  name='author_name'  id='author_name'  ".(isset($invalid_fields['author_name']) ?'class="invalid" ':'')."value='",request_var('author_name'),"'>\n";
+		echo "    <tr><td><label for='author_url'  >$lang[Homepage]</label><td><input type='text'  name='author_url'   id='author_url'   ".(isset($invalid_fields['author_url'])  ?'class="invalid" ':'')."value='",request_var('author_url'),"'> <span class='help'>($lang[optional])</span>\n";
+		echo "    <tr><td><label for='author_email'>$lang[Email]</label   ><td><input type='email' name='author_email' id='author_email' ".(isset($invalid_fields['author_email'])?'class="invalid" ':'')."value='",request_var('author_email'),"'> <span class='help'>($lang[emailnote])</span>\n";
+		echo "    <tr><td><td><label><input type='checkbox' name='author_subscribe' ",request_var_check('author_subscribe'),"> $lang[Subscribe]</label>\n";
 		// generate captcha
-		$captcha = new Captcha();
-		echo "    <tr><td><label for='captcha'>Human?</label><td>";
+		$captcha = new Captcha($page->natural_language);
+		echo "    <tr><td><label for='captcha'>$lang[Human]</label><td>";
 		echo "<input type='hidden' name='captcha_answer' value='".htmlspecialchars($captcha->answer)."'>";
 		echo "<input type='hidden' name='captcha_question' value='".htmlspecialchars($captcha->question)."'>";
 		echo "$captcha->question <input type='text' name='captcha' id='captcha' ".(isset($invalid_fields['captcha'])?'class="invalid" ':'')."value='",request_var('captcha'),"'>\n";
 		echo "   </table>";
 		echo "   <textarea rows='6' name='body'".(isset($invalid_fields['body'])?'class="invalid" ':'').">",htmlspecialchars(@$_REQUEST['body']),"</textarea>\n";
 		echo "   <div class='edit-help'>";
-		echo "    Use <tt>&gt; code</tt> for code blocks, <tt>@code@</tt> for inline code. Some html is also allowed.";
+		echo "    $lang[codenote]";
 		echo "   </div>";
 		echo "   <input type='submit' value='Submit'>\n";
 		if (isset($invalid_fields[''])) {
