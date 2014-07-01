@@ -5,7 +5,7 @@
 // -----------------------------------------------------------------------------
 
 class BaseFormat {
-	function text_to_url($url) {
+	static function text_to_url($url) {
 		/*if (preg_match("/^(.*)/i",$url,$matches)) {
 			$sub = str_replace(' ','_',strtolower($matches[1]));
 			return local_url($sub);
@@ -14,7 +14,7 @@ class BaseFormat {
 		}*/
 		return $url;
 	}
-	function format_link($url, $text, $if_cat = '') {
+	static function format_link($url, $text, $if_cat = '') {
 		$url = BaseFormat::text_to_url($url);
 		$style = '';
 		//if ($url == $current_url || $if_cat == $category) {
@@ -256,7 +256,7 @@ class WikiFormat extends BaseFormat {
 	}
 	
 	// convert a url to a title
-	public function url_to_title($url, $s = '') {
+	public static function url_to_title($url, $s = '') {
 		if (preg_match("/.*:$/",$url)) {
 			$url = preg_replace("/:/","",$url);
 		} else if (!preg_match("@^http://@",$url)) {

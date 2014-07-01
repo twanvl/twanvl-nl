@@ -6,7 +6,7 @@
 
 class Lexer {
 	private $rules;
-	private $str,$offset,$len;
+	private $str, $offset = 0, $len;
 	
 	function __construct($rules,$str) {
 		$this->rules = $rules;
@@ -72,7 +72,7 @@ class HaskellFormat {
 				if ($type == 'varid' || $type == 'varop' || $type == 'conid' || $type == 'comment') {
 					$match = preg_replace('@__([[:alnum:]_]+)@','<sub>\\1</sub>',$match);
 					$match = preg_replace('@__[{]([^}]*)[}]@','<sub>\\1</sub>',$match);
-					$match = preg_replace('@!!!(.*?)!!!@e','htmlspecialchars_decode("\\1")',$match);
+					$match = preg_replace_callback('@!!!(.*?)!!!@',function($ma){return htmlspecialchars_decode($ma[1]);},$match);
 				}
 				$out .= "<span class=\"$type\">$match</span>";
 			}
