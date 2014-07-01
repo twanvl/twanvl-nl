@@ -8,14 +8,14 @@ class Cache {
 	private static $last_modified = 0;
 	private static $aborted = false;
 	
-	function disable() {
+	static function disable() {
 		Cache::$last_modified = 1e100;
 		Cache::$aborted = true;
 	}
-	function depend_on_file($path) {
+	static function depend_on_file($path) {
 		Cache::depend_on_time(@filemtime($path));
 	}
-	function depend_on_time($time) {
+	static function depend_on_time($time) {
 		if ($time > Cache::$last_modified) Cache::$last_modified = $time;
 	}
 	
