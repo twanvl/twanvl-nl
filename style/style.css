@@ -396,12 +396,12 @@ tt.complex {
 pre .empty-line {
 	margin-bottom:		-.5em;
 }
-.keyword {
-	color:				rgb(0,90,180);
-	font-weight:		bold;
+.keyword,
+.haskell .keyglyph {
+	color:				rgb(160,110,0);
 }
 .conid, .conop {
-	color:				rgb(180,128,0);
+	color:				rgb(0,90,180);
 }
 .comment, .comment a {
 	color:				rgb(128,128,128);
@@ -415,7 +415,7 @@ pre .empty-line {
 	color:				rgb(64,80,64);
 }
 .num {
-	color:				rgb(128,0,128);
+	color:				rgb(0,160,0);
 }
 .str, .chr {
 	color:				rgb(0,128,128);
@@ -427,7 +427,7 @@ pre .empty-line {
 	font-style:			italic;
 }
 .keyglyph, .listcon {
-	color:				rgb(0,90,180);
+  color: inherit;
 }
 .varop {
 	color:				rgb(128,0,0);
@@ -435,6 +435,15 @@ pre .empty-line {
 .hole {
 	color:				rgb(0,0,0);
 	background:			rgb(180,255,180);
+}
+.agda-fun {
+  color:        rgb(0,90,180);
+}
+.agda-ctor {
+  color:        rgb(0,160,0);
+}
+.agda-proj {
+  color:        rgb(180,0,180);
 }
 
 #comments .conid, #comments .conop, #comments .listcon {
