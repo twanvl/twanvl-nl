@@ -388,6 +388,9 @@ tt.complex {
 #body pre.agda {
 	background-image: url(codeblock-agda.png);
 }
+#body pre.c-- {
+	background-image: url(codeblock-cmm.png);
+}
 #body pre.haskell-plain {
 	border: 0;
 	padding: 0;

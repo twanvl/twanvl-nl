@@ -100,9 +100,15 @@ class WikiFormat extends BaseFormat {
 			$this->state = '<pre class="'.$ma[1].'-continue';
 		} elseif (preg_match('@^\]?>\s*--\s*(?:BLOCK|TYPE|LANGUAGE)[:]?\s*(\S+)$@',$line, $ma)){
 			// language of the following block
-			if ($ma[1] == 'agda') {
+			if ($ma[1] == 'haskell') {
+			    $this->language = new HaskellFormat();
+			    $this->default_block_type = 'haskell';
+		    } elseif ($ma[1] == 'agda') {
 			    $this->language = new AgdaFormat();
 			    $this->default_block_type = 'agda';
+		    } elseif ($ma[1] == 'c--') {
+			    $this->language = new CmmFormat();
+			    $this->default_block_type = 'c--';
 		    }
 			$this->state_switch('<pre class="'.htmlspecialchars($ma[1]).'">','</pre>');
 		} elseif (preg_match('@^\]?>\s*--\s*(?:LEXER)[:]?\s*(\S+)\s*(.*)$@',$line, $ma)){

@@ -2,4 +2,5 @@ rgb(217,236,255)
 Calibri italic  48pt
 2px bottom and right margin  (effective 3px for bottom)
 
-convert -background transparent -fill rgb(217,236,255) -font Calibri -style Italic -pointsize 48 -size x34 label:Agda -trim -bordercolor transparent -border 2 codeblock-agda.png
+convert -background transparent -fill rgb(217,236,255) -font Calibri-Italic -pointsize 48 -size x50 label:Agda -trim -bordercolor transparent -border 2 codeblock-agda.png
+convert -background transparent -fill rgb(217,236,255) -font Calibri-Italic -pointsize 48 -size x50 label:C-- -trim -bordercolor transparent -border 2 codeblock-cmm.png
