@@ -48,6 +48,7 @@ class Resolver {
 //		} else if (file_exists("$url.php")) {
 //			return "x";
 		} else {
+			Cache::disable();
 			return Page::error_page_file_not_found($url);
 		}
 	}
