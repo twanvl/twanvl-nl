@@ -594,6 +594,9 @@ pre .empty-line {
 .link-list .thumbnail.icon-prib {
 	background-image: url(icon-prib.png);
 }
+.link-list .thumbnail.icon-thesis {
+	background-image: url(icon-thesis.png);
+}
 
 .link-list .title {
 	display: block;
