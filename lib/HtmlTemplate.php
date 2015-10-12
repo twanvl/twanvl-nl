@@ -58,7 +58,7 @@ abstract class HtmlTemplate {
       <ul>
        <?php
          HtmlTemplate::write_nav_link($page->category,"index","Me");
-         HtmlTemplate::write_nav_link($page->category,"research","Research");
+         HtmlTemplate::write_nav_link($page->category,"research","Publications");
          HtmlTemplate::write_nav_link($page->category,"teaching","Teaching");
          HtmlTemplate::write_nav_link($page->category,"software","Software");
          HtmlTemplate::write_nav_link($page->category,"blog","Blog");
