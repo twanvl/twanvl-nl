@@ -49,7 +49,7 @@ class Captcha {
 				  array('q'=>'Name a function of type <tt>(a -> b) -> ([a] -> [b])</tt>:'
 				       ,'a'=>array('map','fmap','<$>','(<$>)')),
 				  array('q'=>'Name a function of type <tt>[[a]] -> [a]</tt>:'
-				       ,'a'=>array('concat','join','msum','mconcat')),
+				       ,'a'=>array('concat','join','msum','mconcat','head','last')),
 			  );
 			}
 			$i = rand()%count($qa);
