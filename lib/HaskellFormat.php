@@ -35,15 +35,23 @@ class HaskellFormat {
 			} elseif ($type == 'hole') {
 				$match = '{' . substr($match,2,-2) . '}';
 				$out .= "<span class=\"$type\">$match</span>";
+		  } elseif ($type == 'sub') {
+				if (!$is_html) $match = htmlspecialchars($match);
+			  $match = preg_replace('@[\^_]@u','',$match);
+			  $out .= "<sub>$match</sub>";
+		  } elseif ($type == 'sup') {
+				if (!$is_html) $match = htmlspecialchars($match);
+			  $match = preg_replace('@[\^_]@u','',$match);
+			  $out .= "<sup>$match</sup>";
 			} else {
 				if (!$is_html) $match = htmlspecialchars($match);
 				if ($type == 'keyword') {
 					$match = preg_replace('@^__keyword__@','',$match);
 				}
 				if ($type == 'varid' || $type == 'varop' || $type == 'conid' || $type == 'comment') {
-					$match = preg_replace('@__([[:alnum:]_]+)@','<sub>\\1</sub>',$match);
-					$match = preg_replace('@__[{]([^}]*)[}]@','<sub>\\1</sub>',$match);
-					$match = preg_replace_callback('@!!!(.*?)!!!@',function($ma){return htmlspecialchars_decode($ma[1]);},$match);
+					$match = preg_replace('@__([[:alnum:]_]+)@u','<sub>\\1</sub>',$match);
+					$match = preg_replace('@__[{]([^}]*)[}]@u','<sub>\\1</sub>',$match);
+					$match = preg_replace_callback('@!!!(.*?)!!!@u',function($ma){return htmlspecialchars_decode($ma[1]);},$match);
 				}
 				$out .= "<span class=\"$type\">$match</span>";
 			}
@@ -64,13 +72,15 @@ global $haskell_lang;
 $haskell_lang = array(
 	'!!!' =>      '@!!!.*?!!!@',
 	'!!!notation' => '@{-!!!.*!!!-}@',
-	'input' =>    '@^(?:[*]?([[:alnum:]]|λ)+>|<[a-zA-Z]+> *>?|> )@i',
-	'pragma' =>   '@{-# *[[:upper:]]+ .*?#-}@',
-	'comment' =>  '@--.*|{-.*-}@',
+  'sub' => "@(?!)@u", // subscript (disabled)
+  'sup' => "@(?!)@u",
+	'input' =>    '@^(?:[*]?([[:alnum:]]|λ)+>|<[a-zA-Z]+> *>?|> )@iu',
+	'pragma' =>   '@{-# *[[:upper:]]+ .*?#-}@u',
+	'comment' =>  '@--.*|{-.*-}@u',
 	'keyword' =>  '@\b(if|then|else|module|import|qualified|hiding|where|let|in|case|of|newtype|default|infix|infixr|infixl|(?:data|type)(?: family)?|class|instance|forall|exists|deriving|do|foreign|prim|__keyword__[[:alnum:]]+)\b@',
-	'str' =>      "@\"(?:[^\"\\\\]|\\\\.)*?\"@",
-	'chr' =>      "@\'(?:[^\'\\\\]|\\\\.+?)\'@",
-	'num' =>      '@-?\b[0-9]+@',
+	'str' =>      "@\"(?:[^\"\\\\]|\\\\.)*?\"@u",
+	'chr' =>      "@\'(?:[^\'\\\\]|\\\\.+?)\'@u",
+	'num' =>      '@-?\b[0-9]+@u',
 	'listcon' =>  '@[\\[\\]]|\(:\)|(:|\\.\\.)(?=[^-:!\\@#$%^*.|=+<>&~/\\\\])|\\|\\]@',
 	'keyglyph' => '@[\\[\\]]|(?:=>|=|->|::|\\\\|<-|\|)(?=\\s|[a-zA-Z(\\@_])@',
 	'conop' =>    "@`(?:[[:upper:]][[:alnum:]_']*[.])*[[:upper:]][[:alnum:]_']*`|:([-:\\@#$%^*.|=+<>&~/\\\\]|!!?(?!!))*@u",

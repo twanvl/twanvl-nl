@@ -154,7 +154,7 @@ abstract class HtmlTemplate {
 				echo "<img src='" . htmlspecialchars(gravatar_image($c->author_email)) . "' alt='' class='avatar'>";
 				if ($c->author_url) {
 				    $url = htmlspecialchars($c->author_url);
-				    if (preg_match('@^[a-z0-9]+[.]@',$url)) {
+				    if (preg_match('@^[a-z0-9]+[.]@u',$url)) {
 				        $url = 'http://' . $url;
 				    }
 					echo '<a href="' . $url . '">' . htmlspecialchars($c->author_name) . '</a>';

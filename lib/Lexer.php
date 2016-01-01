@@ -22,7 +22,9 @@ class Lexer {
 			}
 		}
 		// failed to match any
-		return array('',$this->str[$this->offset++]);
+		$char = mb_substr(substr($this->str,$this->offset,6),0,1);
+		$this->offset += strlen($char);
+		return array('',$char);
 	}
 	function end() {
 		return $this->offset >= $this->len;
