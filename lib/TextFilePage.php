@@ -51,8 +51,14 @@ class TextFilePage extends Page {
 				$this->tags = preg_split ('@[\s|,]+@',$ma[2],-1,PREG_SPLIT_NO_EMPTY);
 			} elseif (preg_match('@^((?:is[ _-]?)?published):\s*(.*)@',$attr,$ma)) {
 				$this->is_published = to_bool($ma[2]);
+			} elseif (preg_match('@^(source[ _-]?link url):(.*)@',$attr,$ma)) {
+				$this->source_link_url = $ma[2];
 			} elseif (preg_match('@^(source[ _-]?link):(.*)@',$attr,$ma)) {
-				$this->source_link = "<a href='$this->path'>$ma[2]</a>";
+				if (isset($this->source_link_url)) {
+					$this->source_link = "<a href='$this->source_link_url'>$ma[2]</a>";
+				} else {
+					$this->source_link = "<a href='$this->path'>$ma[2]</a>";
+				}
 			} elseif (preg_match('@^(?:show[ _-]?)?(comments):\s*(.*)@',$attr,$ma)) {
 				$this->show_comments = true;
 			} elseif (preg_match('@^show[ _-]?date:\s*(.*)@',$attr,$ma)) {
