@@ -448,6 +448,9 @@ pre .empty-line {
 .agda-proj {
   color:        rgb(180,0,180);
 }
+.small-space {
+  font-size: 50%;
+}
 
 #comments .conid, #comments .conop, #comments .listcon {
 	color:				rgb(255,210,128);
