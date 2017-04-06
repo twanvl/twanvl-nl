@@ -34,6 +34,7 @@ class Util {
 	
 	static function die_not_found($url,$msg='') {
 		$page = Page::error_page_file_not_found($url,$msg);
+		Cache::disable();
 		HtmlTemplate::write($page);
 		exit();
 	}
