@@ -20,7 +20,7 @@ abstract class HtmlTemplate {
 	
 	static function write_html($page) {
 		$page->load();
-		header(':',true,$page->status_code);
+		http_response_code($page->status_code);
 		header('Content-Type: text/html; charset=utf-8');
 		$base  = htmlspecialchars(Util::base_url());
 		$title = htmlspecialchars($page->title);
