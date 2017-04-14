@@ -30,9 +30,9 @@ abstract class HtmlTemplate {
   <head>
     <title><?php echo $title ?></title>
     <base href="<?php echo $base;?>">
-    <link href='http://fonts.googleapis.com/css?family=Nobile&subset=latin' rel='stylesheet' type='text/css'>
-    <link href='http://fonts.googleapis.com/css?family=Crimson+Text&subset=latin' rel='stylesheet' type='text/css'>
-    <link href='http://fonts.googleapis.com/css?family=Droid+Serif&subset=latin' rel='stylesheet' type='text/css'>
+    <link href='https://fonts.googleapis.com/css?family=Nobile&subset=latin' rel='stylesheet' type='text/css'>
+    <link href='https://fonts.googleapis.com/css?family=Crimson+Text&subset=latin' rel='stylesheet' type='text/css'>
+    <link href='https://fonts.googleapis.com/css?family=Droid+Serif&subset=latin' rel='stylesheet' type='text/css'>
     <link href='<?php echo $base;?>style/style.css' rel='stylesheet' type='text/css'>
     <link href='<?php echo $base;?>style/flinder-16.png' rel='shortcut icon'>
     <?php if ($page->show_feedlink) {
@@ -248,5 +248,5 @@ function request_var_check($var, $default = true) {
 function gravatar_image($email) {
 	if (!$email) return "style/no-avatar2.png";
 	$hash = md5(strtolower(trim($email)));
-	return "http://www.gravatar.com/avatar/$hash?s=20&d=retro";
+	return "https://www.gravatar.com/avatar/$hash?s=20&d=retro";
 }

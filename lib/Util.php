@@ -55,10 +55,14 @@ class Util {
 	static function base_url() {
 		$dirname = pathinfo($_SERVER["SCRIPT_NAME"], PATHINFO_DIRNAME);
 		$server = $_SERVER["SERVER_NAME"];
-		if ($_SERVER['SERVER_PORT'] != 80) {
+		if ($_SERVER['SERVER_PORT'] != 80 && $_SERVER['SERVER_PORT'] != 443) {
 			$server .= ':' . $_SERVER['SERVER_PORT'];
 		}
-		$base = 'http://' . $server . $dirname;
+		if ($server == 'localhost') {
+  		$base = 'http://' . $server . $dirname;
+		} else {
+  		$base = 'https://' . $server . $dirname;
+		}
 		if (substr($base,-1) != '/') $base .= '/';
 		return $base;
 	}
