@@ -35,6 +35,12 @@ class TextFilePage extends Page {
 		$data = file($this->path,FILE_IGNORE_NEW_LINES);
 		// title, and other attributes
 		$language = 'haskell';
+		if (preg_match('@.md$@',$this->path)) {
+  		$format = 'markdown';
+		} else {
+		  $format = 'wiki';
+		}
+		$literate_style = preg_match('@.lagda$@',$this->path) ? 'latex' : 'normal';
 		while (!empty($data)) {
 			$attr = array_shift($data);
 			if (preg_match('@^(title):\s*(.*)@',$attr,$ma)) {
@@ -64,7 +70,7 @@ class TextFilePage extends Page {
 			} elseif (preg_match('@^show[ _-]?date:\s*(.*)@',$attr,$ma)) {
 				$this->show_date = true;
 			} elseif (preg_match('@^literate style: latex@',$attr,$ma)) {
-				$data = unlit_latex($data);
+				$literate_style == 'latex';
 			} elseif (preg_match('@^language: (.*)@',$attr,$ma)) {
 				$language = ($ma[1]);
 			} elseif (preg_match('@^natural language: (.*)@',$attr,$ma)) {
@@ -88,10 +94,16 @@ class TextFilePage extends Page {
 	    } else {
 	        $this->license_link = DEFAULT_PAGE_LICENSE;
 	    }
-		
+		if ($literate_style == 'latex') {
+		  $data = unlit_latex($data);
+		}
 		// body
-		$this->body = '';
-		$this->body .= WikiFormat::format($data, true, $language);
+		if ($format == 'markdown') {
+		  $this->body = MarkdownFormat::format($data, $language);
+		} else {
+		  $this->body = '';
+		  $this->body .= WikiFormat::format($data, true, $language);
+		}
 	}
 	
 }
