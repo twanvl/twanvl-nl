@@ -23,7 +23,7 @@ $agda_lang['sub'] = $haskell_lang['sub'];
 $agda_lang['sup'] = $haskell_lang['sup'];
 $agda_lang['input'] = $haskell_lang['input'];
 $agda_lang['pragma'] = $haskell_lang['pragma'];
-$agda_lang['comment'] = $haskell_lang['comment'];
+$agda_lang['comment'] = "@---*(?![-:\\@#$%^*.|=+<>&~]).*|{-.*-}@u";
 $agda_lang['str'] = $haskell_lang['str'];
 $agda_lang['chr'] = $haskell_lang['chr'];
 $agda_lang['num'] = '@-?\b[0-9]+(?=$|[ (){};_])@u';
