@@ -153,7 +153,7 @@ class WikiFormat extends BaseFormat {
             }
 		
 		// other
-		} elseif (preg_match("@^\s*</?(pre|ul|ol|li|div|blockquote|h2|h3|>)@u", $line)) {
+		} elseif (preg_match("@^\s*</?(pre|ul|ol|li|div|blockquote|h2|h3|>)\\b@u", $line)) {
 			$this->state_switch('','');
 			$line = preg_replace("@^<>@","",$line);
 			$this->html .= $this->format_inline($line) . "\n";
