@@ -66,13 +66,13 @@ class WikiFormat extends BaseFormat {
 			$this->state_switch('','');
 		
 		// headings
-		} else if (preg_match('@^[-=]{4}\s*([^-=].*)\s*[-=]{4}\s*$@u',$line,$ma)) {
+		} else if (preg_match('@^[-=]{4}\s*([^-=].*?)\s*([-=]{4})?\s*$@u',$line,$ma)) {
 			$this->state_switch('','');
 			$this->html .= '<h4>' . $this->anchor_for($ma[1]) . $this->format_inline($ma[1]) . "</h4>\n";
-		} elseif (preg_match('@^[-=]{3}\s*([^-=].*)\s*[-=]{3}\s*$@u',$line,$ma)) {
+		} elseif (preg_match('@^[-=]{3}\s*([^-=].*?)\s*([-=]{3})?\s*$@u',$line,$ma)) {
 			$this->state_switch('','');
 			$this->html .= '<h3>' . $this->anchor_for($ma[1]) . $this->format_inline($ma[1]) . "</h3>\n";
-		} elseif (preg_match('@^[-=]{2}\s*([^-=].*)\s*[-=]{2}\s*$@u',$line,$ma)) {
+		} elseif (preg_match('@^[-=]{2}\s*([^-=].*?)\s*([-=]{2})?\s*$@u',$line,$ma)) {
 			$this->state_switch('','');
 			$this->html .= '<h2>' . $this->anchor_for($ma[1]) . $this->format_inline($ma[1]) . "</h2>\n";
 		
