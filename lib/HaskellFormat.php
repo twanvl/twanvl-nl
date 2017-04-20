@@ -16,9 +16,6 @@ class HaskellFormat {
     }
 	public function format($code) {
 		$lex = new Lexer($this->lang, $code);
-		return HaskellFormat::do_format($lex);
-    }
-    protected static function do_format($lex) {
 		$out = '';
 		while (!$lex->end()) {
 			list($type,$match) = $lex->next();
