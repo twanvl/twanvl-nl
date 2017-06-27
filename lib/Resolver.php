@@ -47,6 +47,9 @@ class Resolver {
 		} else if (file_exists("$url/index.php")) {
 			include("$url/index.php");
 			return $page;
+		} else if (file_exists("$url/index.html")) {
+			include("$url/index.html");
+			return $page;
 //		} else if (file_exists("$url.php")) {
 //			return "x";
 		} else {
