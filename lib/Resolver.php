@@ -40,6 +40,8 @@ class Resolver {
 			return new TextFilePage($url,"./$url.lhs");
 		} else if (file_exists("$url.lagda")) {
 			return new TextFilePage($url,"./$url.lagda");
+		} else if (file_exists("$url.lagda.md")) {
+			return new TextFilePage($url,"./$url.lagda.md");
 		} else if (file_exists("$url/index.txt")) {
 			return new TextFilePage($url,"./$url/index.txt");
 		} else if (file_exists("$url/index.php")) {
