@@ -72,11 +72,13 @@ class TextFilePage extends Page {
 			} elseif (preg_match('@^literate style: latex@',$attr,$ma)) {
 				$literate_style == 'latex';
 			} elseif (preg_match('@^language: (.*)@',$attr,$ma)) {
-				$language = ($ma[1]);
+				$language = $ma[1];
 			} elseif (preg_match('@^natural language: (.*)@',$attr,$ma)) {
-				$this->natural_language = ($ma[1]);
+				$this->natural_language = $ma[1];
 			} elseif (preg_match('@^license: (.*)@',$attr,$ma)) {
-				$license = ($ma[1]);
+				$license = $ma[1];
+			} elseif (preg_match('@^discussion: (.*)@',$attr,$ma)) {
+				$this->discussion_link = "Discussion: " . $ma[1];
 			} else if ($attr != '') {
 				$this->title = $attr;
 				break;

@@ -95,6 +95,9 @@ abstract class HtmlTemplate {
 		if ($page->license_link) {
 			$info .= "<div>" . $page->license_link . "</div>";
 		}
+		if ($page->discussion_link) {
+			$info .= "<div>" . $page->discussion_link . "</div>";
+		}
 		if ($page->source_link) {
 			$info .= "<div>" . $page->source_link . "</div>";
 		}
