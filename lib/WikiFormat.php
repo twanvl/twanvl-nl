@@ -110,6 +110,9 @@ class WikiFormat extends BaseFormat {
 			    $this->language = new CmmFormat();
 			    $this->default_block_type = 'c--';
 		    }
+			if ($line[0]==']' && !preg_match('@<pre class="(haskell|agda)@u',$this->state)) {
+				$this->state_switch('<pre class="'.$this->default_block_type.'">','</pre>');
+			}
 		} elseif (preg_match('@^\]?>\s*--\s*(?:LEXER)[:]?\s*(\S+)\s*(.*)$@u',$line, $ma)){
 			// modify lexer
 			$this->language->modify_rule($ma[1],$ma[2]);
@@ -132,7 +135,11 @@ class WikiFormat extends BaseFormat {
 			if (!preg_match('@<pre class="(haskell|agda)@u',$this->state)) {
 				$this->state_switch('<pre class="ghci">','</pre>');
 			}
-			$this->html .= WikiFormat::format_code($ma[1]) . "\n";
+			if (trim($ma[1]) === '') {
+				$this->html .= "<div class='empty-line'></div>\n";
+			} else {
+				$this->html .= WikiFormat::format_code($ma[1]) . "\n";
+			}
 		} elseif (preg_match('@^\] ?(.*)$@u',$line,$ma)) {
 			// source code, no formating
 			if ($this->state == '<pre class="ghci">') {
