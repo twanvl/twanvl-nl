@@ -96,6 +96,17 @@ class WikiFormat extends BaseFormat {
 			// ignore the following block
 			$this->state_switch('','');
 			$this->state = 'IGNORE';
+		} elseif (preg_match('@^>\s*--\s*(COLLAPSED):?\s*(.*)$@u', $line, $ma)) {
+			if (!preg_match('@<pre class="(haskell|agda)@u',$this->state)) {
+				$this->state_switch('<pre class="'.$this->default_block_type.'">','</pre>');
+			}
+			if ($ma[2]) {
+  			$message = htmlspecialchars($ma[2]);
+			} else {
+			  $message = "Details...";
+			}
+			$this->html .= "<details><summary class=\"comment\">$message</summary>";
+			$this->pending = '</details>' . $this->pending;
 		} elseif (preg_match('@^\]>\s*--\s*(?:BLOCK|TYPE|LANGUAGE)[:]?\s*(\S+)-continue$@u',$line, $ma)){
 			$this->state = '<pre class="'.$ma[1].'-continue';
 		} elseif (preg_match('@^\]?>\s*--\s*(?:BLOCK|TYPE|LANGUAGE)[:]?\s*(\S+)$@u',$line, $ma)){
