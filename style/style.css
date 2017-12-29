@@ -423,8 +423,9 @@ pre .empty-line {
 * + .iopair {
 	margin-top:			.3em;
 }
+
 .input {
-	color:				rgb(64,80,64);
+	color:				rgb(128,180,128);
 }
 .num {
 	color:				rgb(0,160,0);
