@@ -1,0 +1,18 @@
+title: Talk on Lenses
+subtitle: Talk at the Radboud foundations group, 2011-05-17
+date: 2011-05-19 20:15
+tags: haskell, lens, talks
+
+Two days ago I gave a talk on lenses at the Radboud Unviersity (where I work on my PhD on machine learning).
+I put the slides online for your enjoyment, although it might be hard to follow, since it is light on explanatory text.
+
+This talk includes information from at least <a href="/blog/haskell/overloading-functional-references">three different</a> <a href="/blog/haskell/References-Arrows-and-Categories">earlier</a> <a href="/blog/haskell/cps-functional-references">blog posts</a>, as well as <a href="http://arxiv.org/abs/1103.2841">Russel O'Connor's recent paper on multiplate</a>. There is no new information in the talk, but I do have a new favorite representation for lenses.
+
+LINK: /files/lenses-talk-2011-05-17.pdf
+TITLE: Lenses Talk 2011 (slides)
+ICON: pdf
+//
+LINK: /files/lenses-talk-2011-05-17-tex.zip
+TITLE: The tex source file for these slides
+ICON: zip
+

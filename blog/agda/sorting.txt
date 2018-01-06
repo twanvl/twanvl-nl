@@ -1,0 +1,270 @@
+title: The complete correctness of sorting
+subtitle: Merge sort returns an ordered permutation of the input, in O(n * log n).
+tags: agda
+
+A while ago I set out to prove the correctness of <a href="http://en.wikipedia.org/wiki/Merge_sort">merge sort</a> in Agda.
+Of course this has been done before.
+But <a href="http://mazzo.li/posts/AgdaSort.html">most</a> <a href="http://www.iis.sinica.edu.tw/~scm/2007/agda-exercise-proving-that-mergesort-returns-ordered-list/">proofs</a> you find are far from complete.
+All they prove is a lemma such as
+
+> -- LANGUAGE: agda
+> -- LEXER: varop |in-time
+> is-sorted : ∀ (xs : List A) → IsSortedList (sort xs)
+
+Maybe even restricted to lists of natural numbers.
+While it is nice that a sort function indeed produces a sorted output, that is only half of the story.
+Consider this function:
+
+> cheat-sort : List A → List A
+> cheat-sort _ = []
+
+Clearly the empty list is sorted. So we are done.
+What is missing is the second half of correctness of sorting: that the output is a permutation of the input.
+You want something like:
+
+> sort : (xs : List A) → Sorted' A
+> record Sorted' (xs : List A) : Set where
+>   field
+>     ys       : List A
+>     isSorted : IsSorted ys
+>     isPerm   : IsPermutation ys xs
+
+While I was at it, I decided to add the third half of correctness: a bound on the runtime or computational complexity.
+In the end I was able to define:
+
+> insertion-sort : ∀ xs → (Sorted xs) in-time (length xs * length xs)
+> selection-sort : ∀ xs → (Sorted xs) in-time (length xs * length xs)
+> merge-sort : ∀ xs → (Sorted xs) in-time (length xs * ⌈log₂ length xs ⌉)
+
+This was not as easy as I would have hoped.
+In this post I will not bore you with all the details, I'll just go over some of the highlights. The <a href="https://gist.github.com/twanvl/5635740">full code is on github</a>.
+
+-- What it means to be sorted --
+
+There are roughly two ways to define sorted lists that I know of:
+
+# Parametrize the sorted list by a lower bound on the values it contains. For a cons cell the head should be smaller than the lower bound, and the tail should be larger than the head. This requires the type to have a smallest element, but you can adjoin -∞ with a new datatype.
+# Parametrize the sorted list by a list of all values in it. For a cons cell require that the head is smaller than all the values in the tail.
+
+Since I already need to parametrize by all values in the list to show that the sorted list contains a permutation of them, I went with the second approach:
+
+> -- A proof that x is less than all values in xs
+> data _≤*_ (x : A) : List A → Set where
+>   []  : x ≤* []
+>   _∷_ : ∀ {y ys} → (x ≤ y) → x ≤* ys → x ≤* (y ∷ ys)
+> 
+> -- Proof that a list is sorted
+> data IsSorted : List A → Set where
+>   []  : IsSorted []
+>   _∷_ : ∀ {x xs} → x ≤* xs → IsSorted xs → IsSorted (x ∷ xs)
+
+
+-- What it means to be a permutation --
+
+To show that one list is a permutation of another I again used two data types.
+Suppose that we know that @xs@ is a permutation of @ys@. Then when is @x ∷ xs@ a permutation of some list @xys@? Well, we can permute @xs@ to @ys@, and insert @x@ anywhere. I used @◂@ to denote this insertion,
+
+> -- x ◂ xs ≡ xys means that xys is equal to xs with x inserted somewhere
+> data _◂_≡_ (x : A) : List A → List A → Set a where
+>   here  : ∀ {xs}           → x ◂ xs ≡ (x ∷ xs)
+>   there : ∀ {y} {xs} {xys} → (p : x ◂ xs ≡ xys) → x ◂ (y ∷ xs) ≡ (y ∷ xys)
+
+> -- Proof that a list is a permutation of another one
+> data IsPermutation : List A → List A → Set a where
+>   []  : IsPermutation [] []
+>   _∷_ : ∀ {x xs ys xys}
+>       → (p : x ◂ ys ≡ xys)
+>       → (ps : IsPermutation xs ys)
+>       → IsPermutation (x ∷ xs) xys
+
+
+Now the @Sorted@ data type has three components: the sorted list, a proof that it is sorted, and a proof that it is a permutation of the input. These parts are either all @[]@, or they are all @_∷_@.
+It turns out to be much nicer to combine the parts together,
+
+> -- Sorted permutations of a list
+> data Sorted : List A → Set  where
+>   []   : Sorted []
+>   cons : ∀ x {xs xxs}
+>        → (p : x ◂ xs ≡ xxs) -- inserting x somewhere into xs gives xxs
+>        → (least : x ≤* xs)  -- x is the smallest element of the list
+>        → (rest : Sorted xs) -- and we have also sorted xs
+>        → Sorted xxs
+
+Of course @Sorted@ and @Sorted'@ are equivalent.
+
+As an aside, these are all the ingredients necessary for proving
+
+> sorted-unique : ∀ {xs} → (ys zs : Sorted xs)
+>               → sorted-to-List ys ≡ sorted-to-List zs
+
+
+-- A monad for keeping track of the runtime --
+
+To be able to reason about the runtime, as measured in the number of comparisons performed, I decided to use a monad. The type is simply
+
+> data _in-time_ (A : Set) (n : ℕ) : Set a where
+>   box : A → C A n
+
+the constructor @box@ is private, and it can only be accessed through the standard monad operations, 
+
+> return : ∀ {A n} → A → A in-time n
+> 
+> _>>=_ : ∀ {A B} {m n} → A in-time n → (A → B in-time m) → B in-time (n + m)
+
+//Since the bounds on the runtime are upper bounds, we will also need something like
+//
+//> bound-≤ : ∀ {A m n} → (m ≤ n) → A in-time m → A in-time n
+
+
+Then the sorting functions will be parametrized by a function that for some partial order decides between @x ≤ y@ and @y ≤ x@ in one step, using the monad we defined above:
+
+> module Sorting
+>     {A : Set} {l} {_≤_ : Rel A l}
+>     (isPartialOrder : IsPartialOrder _≡_ _≤_) 
+>     (_≤?_ : (x y : A) → (x ≤ y ⊎ y ≤ x) in-time 1)
+>   where ...
+
+Note that I specify that @_≤_@ is a ''partial'' order,
+because the Agda standard library definition of a total order actually comes with a function
+> total : ∀ x y → (x ≤ y) ⊎ (y ≤ x)
+which would defeat the whole prupose of @_≤?_@.
+In fact, the standard @TotalOrder@s are decidable up to base equality, and if the base equality is propositional equality, then they are decidable. I.e.
+
+> total-decidable : ∀ {a r} {A : Set a} → (_≤_ : Rel A r)
+>                 → IsTotalOrder _≡_ _≤_
+>                 → IsDecTotalOrder _≡_ _≤_
+
+See the source for the proof of this side theorem. It relies on a trick to show that @total x y@ can only be different from @total y x@ if @x ≢ y@. Which holds for propositional equality, but not in general.
+
+
+-- Logarithms --
+
+To be able to complete the specification of merge sort, we still need to add some missing functions on natural numbers. In particular, we need a logarithm.
+This logarithm turns out to be surprisingly tricky to define in Agda.
+Why? Because the usual definition uses non-structural recursion. In haskell you would write
+
+> -- LANGUAGE: haskell
+> -- @log n@ calculates ⌊log₂ (n+1)⌋
+> log 0 = 0
+> log n = 1 + log (n `div` 2)
+
+But Agda is not able to see that @n `div` 2@ (or in agda notation, @⌊ n /2⌋@) is smaller than @n@.
+There are two approaches to circumvent this problem:
+# Use a different algorithm: Convert @n@ to a binary representation, and count the number of digits.
+# Use well-founded recursion, manually supplying a proof that @⌊ n /2⌋ < n@.
+
+I went with the second option, because I will also be using the same shape of recursion inside merge sort itself.
+The standard way to use well-founded recursion is through the function @<-rec@, which works a bit like @fix@ in haskell, except that you need to pass in a proof that the argument is smaller. The code would look like this:
+
+> log = <-rec log'
+>   where
+>   log′ self 0 = 0
+>   log′ self (suc n) = 1 + self ⌊ suc n /2⌋ ({-proof ommitted-})
+
+But this leads to a problem as soon as you want to prove a property of logarithms. For example, you would think that @log (suc n) ≡ 1 + (log ⌊ suc n /2⌋)@. But that is not definitionally true, since one @<-rec@ is not like another. I found that the well-founded recursion library was in general a pain to work with, especially because it uses so many type synonyms. My solution was to use the slightly lower level accessibility relation. A value of type @Acc _<′_ n@ allows you to do recursion with any @m <′ n@. Now I can use actual recursion:
+
+> log-acc : ∀ n → Acc _<′_ n → ℕ
+> log-acc 0 _ = 0
+> log-acc (suc n) (acc more) = 1 + log-acc ⌊ suc n /2⌋ (more _ {-proof ommitted-})
+
+And use the well-foundedness of ℕ to get an @Acc@ for any number:
+
+> log : ℕ → ℕ
+> log n = log-acc n (<-well-founded n)
+> 
+> ⌈log₂_⌉ : ℕ → ℕ
+> ⌈log₂ n ⌉ = log (pred n)
+
+There is still a snag when proving properties of @log@ or @log-acc@, namely that you need to prove that @(more n ...) ≡ <-well-founded n@. But the accessibility relation doesn't actually matter for the computation, so I decided to just postulate
+
+> postulate acc-irrelevance : ∀ {n : ℕ} → {a b : Acc _<′_ n} → a ≡ b
+>  -- this also follows from function extensionality
+
+If anyone knows a better way to prove properties of functions defined with well-founded recursion, I am open to suggestions.
+
+-- Vectors versus lists --
+
+While working on the proofs I had to choose: Do I use fixed length @Vec@s or variable length @List@s? Both have their pros and cons.
+
+On the one hand, the sorting functions with vectors look a bit nicer, because we can use @n@ instead of @length xs@:
+
+> merge-sort : ∀ {n} (xs : Vec A n) → Sorted xs in-time (n * ⌈log₂ n ⌉)
+
+Additionally, with lists we can only do recursion on the input list, with vectors we can do recursion on the length of the list. The former works fine for insertion sort, where in each step you do something with the head element of the list; but it fails for selection and merge sort.
+
+On the other hand, with vectors you sometimes can't even ''state'' the property that one vector is equal to another.
+For the term @xs ≡ ys ++ zs@ to be well-typed, @xs@ must have the type @Vec A (m + n)@.
+
+I went back and forth a couple of times between vectors and lists.
+In the end I settled for using vectors only when needed, and specifying properties in terms of lists.
+For example the split function for merge sort has the type
+
+> splitHalf : ∀ {n} → (xs : Vec A n)
+>           → ∃₂ \(ys : Vec A ⌈ n /2⌉) (zs : Vec A ⌊ n /2⌋)
+>                → toList ys ++ toList zs ≡ toList xs
+
+So instead of using @Vec._++_@, I use @List._++_@.
+In this style 'select' from selection sort looks like
+
+> select : ∀ {n} (xs : Vec A (suc n))
+>        → (∃₂ \y ys → (y ◂ toList ys ≡ toList xs) × (y ≤* toList ys)) in-time n
+
+I.e. given a ''vector'' @xs@ with @n+1@ elements, return a vector @ys@ with @n@ elements, such that inserting @y@ into it gives us back @xs@. And this item @y@ should be the smallest one.
+
+
+-- Extension: expected runtime --
+
+An extension of this post would be to look at randomized sorting algorithms. In particular, quick sort with a randomly chosen pivot has expected runtime @O(n * log n)@. At first I thought that all that would be needed is a function
+
+> expected : ∀ {P}
+>          → (ns : List ℕ)             -- A list of numbers
+>          → All (\n → P in-time n) ns -- for each n we have P in-time n
+>          → P in-time ⌈mean ns ⌉      -- then expect time is mean of ns
+
+But that is not quite right, since if we actually knew the runtimes @ns@ we could just pick the fastest one.
+With the randomized quicksort you will end up in a situation where you have two or more computations to choose from, and you know that some are faster than the others, but you don't yet know which one. That sounds a bit classical. A second idea is to return the runtimes at a later time, something like
+
+> expected : ∀ {P} {long-time}
+>          → (xs : List (\ex n P in-time n) in-time long-time)
+>          → P in-time ⌈mean map proj1 xs ⌉
+
+But this is not quite right either, since after @long-time@ computing @P@ (i.e. a sorting) can be done in 0 time.
+Rather, we need to decouple the proof about the runtime from the computation.
+This is not possible with the @_in-time_@ monad. We would need to get rid of the runtime from the type, and store it as a value instead.
+
+I have tried redoing the proofs in this post with the monad
+> data Timed (A : Set) : Set a where
+>   _in-time_ : A → ℕ → Timed A
+> runtime : Timed A → ℕ
+
+But I didn't succeed; I ended up with the baffling error message 
+
+> runtime (big-lambda-term (unbox (x ≤? u)))
+> !=
+> runtime (big-lambda-term (unbox (x ≤? u)))
+
+
+
+-- Another extension: lower bound on runtime --
+
+So far I have proved that you can sort a list in time @n * log n@. 
+It would also be interesting to look at the well known <a href="http://planetmath.org/LowerBoundForSorting">lower bound on the runtime of sorting</a>, and prove a theorem such as
+
+> can't-sort-in-linear-time : ¬ ∃ \k → ∀ xs → Sorted xs in-time k * length xs
+
+//or even
+//> lower-bound : ¬ ∃ \k → ∀ xs → Sorted xs in-time m x m < (k * length xs * ⌈log₂ length xs ⌉)
+
+unfortunately this statement is not actually true for all types. For finite sets you actually ''can'' sort in linear time with counting sort.
+It also fails if we happen to have some decidable total order for that type lying around. But it might be possible to prove
+
+> can't-sort-in-linear-time
+>   : (no-fast-compare : ∀ x y → (x ≤ y ⊎ y ≤ x) in-time 0 → x ≡ y)
+>   → ¬ ∃ \k → ∀ xs → Sorted xs in-time k * length xs
+
+But you have to be really careful with a term like @no-fast-compare@, because inside the runtime monad we do have values of type @(x ≤ y ⊎ y ≤ x)@. And so you can derive @∀ x y → x ≡ y in-time 1@, and therefore also @⊥ in-time 1@ for non trivial types. Which certainly looks wrong to me.
+
+I don't know a way around this problem, but it might be related to the same issue as expected runtime.
+I.e. the problem is that all information about the runtime is bundled together with the return value.
+The lower bound proof essentially asks to sort a 'random' list, and by a counting argument shows that at least a certain number of comparisons are needed to be able to produce all outputs.
+

@@ -1,0 +1,63 @@
+title: My blog software
+subtitle: Nothing fancy
+tags: blog
+date: 2012-03-28 23:13 CEST
+
+In this post I will explain the software behind my blog, since several visitors have asked about it.
+But I will have to disappoint those of you hoping for fancy Haskell code: it is written in PHP.
+So no pandoc, no hakyll, no happstack and no Yesod.
+
+Some reasons for picking php are:
+* PHP works pretty much everywhere, and
+* PHP hosting is very cheap.
+* I already had much of the code laying around from other website projects.
+* I honestly think that PHP is a better tool for a simple hacked together website like this.
+
+-- From files to blog posts --
+
+The code is inspired by <a href="http://www.blosxom.com/">blosxom</a>, which I used before.
+Blog posts, as well as most other pages on the website, are stored in text files.
+The script @blog.php@ calls a function @Resolver::find_all_pages@, which does a simple directory listing to find all the .txt and .lhs files in the @blog@ subdirectory.
+
+For me this makes it very easy to write a new blog post. I just fire up a text editor, and save the file under the right name. I can then view it on @localhost@. To publish to the rest of the internet I copy the file to the webserver.
+
+The parser for the text files is also quite simple. First comes a header block, with lines like
+] title: My blog software
+] tags: blog, bananas
+] date: 2012-03-28 23:13 CEST
+After that is the page body, using a markup syntax strongly inspired by MediaWiki.
+] -- This is a header --
+] Body text with ''italic'', @embeded haskell@, <a href="#">embeded html</a>
+] 
+]> -- BLOCK: haskell-continue
+]> > haskell_code = 1 + 1
+]> >   where more haskell = undefined
+]>
+]> ]> also Haskell, but ignored by the literate haskell preprocessor
+To parse the markup, I use a state machine. I loop over the lines, and determine the line's type.
+For example, lines starting with <tt>"> "</tt> indicate Haskell code, <tt>-- (.*) --</tt> indicates a header, etc. I then just output the appropriate html code for that line. The state machine comes in when merging multiple lines of code into one <tt>&lt;pre></tt> tag. I just keep a variable with the last used open tag. If the previous line uses the same open tag, then do nothing, otherwise insert the close tag for that state, and the open tag for the new state.
+The details are in <a href="https://github.com/twanvl/twanvl-nl/blob/master/lib/WikiFormat.php">WikiFormat.php</a>.
+
+Then the source code itself.
+It needs to be turned into fancy syntax highlighted html.
+That is done with a <a href="https://github.com/twanvl/twanvl-nl/blob/master/lib/HaskellFormat.php">simple hand-written lexer</a>.
+Lexing is surprisingly easy if you have access to a build in regular expression library. Just repeatedly look for the first match after the current index for a set of possible token regexes.
+
+There are some backdoors in the lexer, to allow arbirary html inside code blocks, so
+] ]> !!!<span style="background:red">wrong</span>!!!
+gets rendered as
+]> !!!<span style="background:red">wrong</span>!!!
+This sometimes comes in handy when writing blog posts. Usually I add these backdoors as they are needed.
+
+One issue is that all this on-the-fly parsing can be a bit slow.
+For that I use a cache. I just capture the entire rendered page, and save it in a file. Then before rendering, and in fact before even loading the file, I check if the cache is up to date. If it is, output the cache contents and exit.
+
+Finally the comments, which again use a simple hand-written solution.
+I just store the comments for each post in a single text file. New comments are appended at the end.
+The comments use the same markup parser as the article bodies.
+The most annoying part of the comment system is actually the spam filter. I have a blacklist of words and urls that are not allowed, and a script for retroactively removing spam posts. But some spam does get through.
+
+That's it.
+The code is on
+<a href="https://github.com/twanvl/twanvl-nl">github</a>, if anyone is interested.
+

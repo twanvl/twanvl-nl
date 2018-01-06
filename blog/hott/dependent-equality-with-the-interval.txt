@@ -1,0 +1,71 @@
+title: Dependent equality with the interval
+subtitle: Equating two values with types on two sides of the interval
+tags: hott
+date: 2014-07-01 24:56 CEST
+
+Here is a way to represent heterogeneous or dependent equalities, based on an interval type.
+In Homotopy Type Theory the interval is usually presented as a Higher Inductive Type with two constructors and a path between them. Here I will just give the two constructors, the path is implicit
+
+> -- LANGUAGE: agda
+> -- LEXER: agda-fun |I|i-elim|refl
+> -- LEXER: agda-ctor |i₁|i₂|i-edge
+> data I : Set where
+>   i₁ : I
+>   i₂ : I
+>   -- there is usually a path, i-edge : i₁ ≡ i₂
+
+The eliminator is
+
+> i-elim : ∀ {a} {A : I → Set a}
+>        → (x₁ : A i₁) → (x₂ : A i₂) → (Eq A x₁ x₂) → (i : I) → A i
+> i-elim x₁ x₂ eq i₁ = x₁
+> i-elim x₁ x₂ eq i₂ = x₂
+
+Here the type @Eq@ is the dependent equality, which has type
+
+> Eq : ∀ {a} (A : I → Set a) → (x₁ : A i₁) → (x₂ : A i₂) → Set a
+
+so we take a type parametrized by an interval, and two values of that type at the two endpoints of this interval. We can also define "heterogeneous reflexivity", a generalization of the usual @refl@ function:
+
+> refl : ∀ {a} {A : I → Set a} → (x : (i : I) → A i) → Eq A (x i₁) (x i₂)
+
+This function can be used to extract the third part of @i-elim@, with the reduction
+
+> refl (i-elim x₁ x₂ eq) = eq
+
+I believe this can be used as the basis for an observational type theory, where @Eq A@ and @refl x@ reduce. The above is the first case for @refl@, the rest is "just" tedious structural recursion such as
+
+> Eq (\i → A i × B i) x y =
+>   Eq A (proj₁ x) (proj₁ y) × Eq B (proj₂ x) (proj₂ y)
+> 
+> refl (\i → x i , y i) = refl x , refl y
+
+and
+
+> Eq (\i → A i → B i) f g =
+>   {x : A i₁} → {y : A i₂} → Eq A x y → Eq B (f x) (g y)
+> 
+> refl (\i → \(x : A i) → f i x) =
+>   \{x} {y} xy → refl (\i → f i (i-elim x y xy i))
+
+or we can actually use the dependent equality and be more general
+
+> Eq (\i → Σ (x₁ : A i) (B i x₁)) x y =
+>   Σ (x₁y₁ : Eq A (proj₁ x) (proj₁ y))
+>     (Eq (\i → B i (i-elim (proj₁ x) (proj₁ y) x₁y₁ i))
+>         (proj₂ x) (proj₂ y))
+> 
+> Eq (\i → (x : A i) → B i) f g
+>   {x : A i₁} → {y : A i₂} → (xy : Eq A x y)
+>   → Eq (\i → B i (i-elim x y xy i)) (f x) (g y)
+
+Of course there is a lot more to it, but that is not the subject of this post.
+
+As a final remark: if you are not too touchy about typing, then @refl@ could even be implemented with the path @i-edge@ between @i₁@ and @i₂@
+
+> i-edge : Eq (\_ → I) i₁ i₂
+> i-elim x₁ x₂ eq i-edge = eq
+> refl foo = foo i-edge
+
+But I'd rather not do that.
+

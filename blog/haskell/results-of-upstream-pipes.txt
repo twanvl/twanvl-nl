@@ -1,0 +1,44 @@
+title: What to do with the results of upstream pipes
+subtitle: Should pipes have a fifth type argument?
+date: 2012-04-04 21:35 CEST
+tags: haskell, pipes
+
+In the pipes library, the type of the composition operator is
+
+> (>+>) :: Pipe m a b r -> Pipe m b c r -> Pipe m a c r
+
+If you look closely, then you will notice that all three pipes have result type @r@.
+How does this work? Simple: whichever pipe stops first provides the final result.
+
+In my opinion this is wrong. The upstream pipe produces values, and the downstream pipe does something with them. The downstream pipe is the one that leads the computation, by pulling results from the upstream pipe.
+It is therefore always the downstream pipe that should provide the result. So, in the <a href="blog/haskell/conduits-vs-pipes">pipification of conduit</a>, the proposed type for composition is instead
+
+> (>+>) :: Pipe m a b () -> Pipe m b c r -> Pipe m a c r
+
+This makes it clear that the result of the first pipe is not used, the result of the composition always has to come from downstream.
+But now the result of the first pipe would be discarded completely.
+
+Another, more general, solution is to communicate the result of the first pipe to the second one.
+That would give the @await@ function in the downstream pipe the type
+
+> await :: Pipe m a b (Either r__1 a)
+
+where @r__1@ is the result of the upstream pipe.
+Of course that @r__1@ type needs to come from somewhere. So @Pipe@ would need another type argument
+
+> data Pipe m stream__in stream__out final__in final__out
+
+giving await the type
+
+> await :: Pipe m a b x (Either x a)
+
+Composition becomes
+
+> (>+>) :: Pipe m a b x y -> Pipe m b c y z -> Pipe m a c x z
+
+I think this makes @Pipe@ into a category over ''pairs'' of Haskell types. I was tempted to call this a bicategory, in analogy with <a href="http://hackage.haskell.org/packages/archive/bifunctors/0.1.2/doc/html/Data-Bifunctor.html">bifunctor</a>, but that term apparently means <a href="http://ncatlab.org/nlab/show/bicategory">something else</a>.
+
+Note that this article is just about a quick idea I had.
+I am not saying that this is the best way to do things.
+In fact, I am not even sure if propagating result values in this way actually helps solve any real world problems.
+

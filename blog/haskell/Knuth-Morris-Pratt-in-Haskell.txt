@@ -1,0 +1,122 @@
+title: Knuth-Morris-Pratt in Haskell
+subtitle: Faster substring searching
+date: 2007-04-16
+tags: haskell
+
+A request that comes up regularly on the Haskell mailing list is for a function to determine whether one string
+(the needle) is a substring of another one (the haystack).
+While there is no such function in the Haskell standard library<sup><a href="#infixof" style="text-decoration:none;">&dagger;</a></sup>, it is easy enough to implement:
+> import Data.List
+> as `isSubstringOf` bs = any (as `isPrefixOf`) (tails bs)
+Unfortunatly, this function has a worst case time complexity of $O(length as * length bs)$.
+For example if we evaluate
+> "aaaaaaaaaab" `isSubstringOf` replicate 100 'a'
+We will first match 10 characters starting from the first position and fail just before we matched the entire string.
+Then, starting from the second position, we will match 10 characters again, etc. In total we we will do $11 * 100 = O(length as * length bs)$ comparisons.
+
+There exists an algorithm called the <a href="http://en.wikipedia.org/wiki/Knuth-Morris-Pratt_algorithm">Knuth-Morris-Pratt string searching algorithm</a>
+which has a much better, <code><em>O(length as + length bs)</em></code>, worst case behavior.
+Unfortunately all descriptions you find of the algorithm rely on building a table, and using random access patterns on it.
+Not only does this make it impossible to use simple data structures like lists, it also obfuscates the underlying idea.
+
+
+-- The idea --
+
+The core idea of the algorithm is that we only want to process each character of both strings once.
+This is done by building a table from the needle, and using that table to determine what should be done after each character of the haystack.
+Either the entire needle has been matched at that point and we are done, or we get a new position in the table to use for the next character.
+
+So, let's turn the above description into a Haskell datatype!
+> data KMP a = KMP
+>       { done :: Bool
+>       , next :: (a -> KMP a)
+>       }
+
+Clearly, if we know how to make such a 'table' the matching process is straight forward.
+We need to apply @next@ to each character and we want to know if any of the intermediate tables are @done@:
+> isSubstringOf2 :: Eq a => [a] -> [a] -> Bool
+> isSubstringOf2 as bs = match (makeTable as) bs
+>    where  match table []     = done table
+>           match table (b:bs) = done table || match (next table b) bs
+This can be made shorter using functions from the Prelude:
+> isSubstringOf3 as bs = any done $ scanl next (makeTable as) bs
+
+
+-- Making the table --
+
+All that is left is to make a table, constructing it using a simple recursive function is not an option
+> makeTable1 :: Eq a => [a] -> KMP a
+> makeTable1 []     = KMP True  !!!<span style="color:red">undefined?</span>!!!
+> makeTable1 (x:xs) = KMP False (\c -> if c == x then makeTable1 xs else !!!<span style="color:red">????</span>!!!)
+
+Because what do we do if we ''don't'' have a match?
+Let's look at an example, the calculation @"abc" `isSubstringOf` "aabc"@ would go something like:
+> makeTable "abc" = table0
+> done table0 = False
+> next table0 'a' = (\c -> if c == 'a' then table1 else !!!<span style="color:red">????</span>!!!) 'a' = table1
+> done table1 = False
+> next table1 'a' = (\c -> if c == 'b' then table2 else !!!<span style="color:red">????</span>!!!) 'a'
+>                 = !!!<span style="color:red">????</span>!!! -- what to do now?
+What we should do, is start over, but dropping the first character from the input, in this case that gives
+> -- start over, now for "abc" `isSubstringOf` "abc"
+> next table0 'a' = (\c -> if c == 'a' then table1 else !!!<span style="color:red">????</span>!!!) 'a' = table1
+> done table1 = False
+> next table1 'b' = (\c -> if c == 'b' then table2 else !!!<span style="color:red">????</span>!!!) 'b' = table2
+> done table2 = False
+> next table2 'b' = (\c -> if c == 'c' then table3 else !!!<span style="color:red">????</span>!!!) 'c' = table3
+> done table3 = !!!<span style="color:green">True</span>!!!
+
+
+-- The trick --
+
+At first glance it would seem that we have to reexamine parts of the haystack when we start over.
+But this is not the case.
+
+If, for example the test of @table35@ fails, we don't have to move back 35 characters, because we already know what those characters are, namely ''the characters we matched to get to @table35@''!
+So the table in case of a failed match is always the same, and we can compute that as well.
+
+Lets look again at the @makeTable@ function.
+If @f@ is the table we get for a failed match, we call @next f@ the ''failure function'', and pass it along as a second parameter.
+For the first character, in case of a failed match we simply and start from the beginning for the next character:
+> makeTable :: Eq a => [a] -> KMP a
+> makeTable xs = table
+>    where table = makeTable' xs (const table)
+Notice we have ''tied the knot'', @table@ depends on @table@ itself!
+In Haskell this is not a problem because of lazy evaluation, as long as we don't try to ''use'' what is not computed yet.
+
+The @makeTable'@ function is where the real work happens.
+> makeTable' []     failure = KMP True failure
+> makeTable' (x:xs) failure = KMP False test
+>    where  test  c = if c == x then success else failure c
+>           success = makeTable' xs (next (failure x))
+The base case is not very interesting, although we can now use something better than @undefined@.
+That becomes useful when looking for multiple matches.
+
+The interesting clause is for @(x:xs)@. The @next@ function compares a character @c@ against @x@.<br>
+Is it the same? Great, move to the table for @xs@.<br>
+Is it different? Then look at the @failure@ function.
+
+Finally, to determine the table for @xs@, we need a new failure function,
+describing what would have happened if we started later and ended up at the position after @x@.
+We can ask the current failure function what would have happened in that case, @next (failure x)@.
+
+
+-- Correctness --
+
+It would be nice if we could be sure that what we have constructed is actually a substring matching algorithm.
+The easiest way to verify that I use a simple QuickCheck property:
+> prop_isSubstringOf :: [Bool] -> [Bool] -> Bool
+> prop_isSubstringOf as bs = (as `isSubstringOf` bs) == (as `isSubstringOf2` bs)
+
+] > Test.QuickCheck.test prop_isSubstringOf
+] OK, passed 100 tests.
+It seems to work, that's great.
+
+An interesting exercise would be to prove that what I have made here is equivalent to the na&iuml;ve algorithm
+using equational reasoning.
+Also nice would be comparing it to the imperative Knutt-Moris-Pratt algorithm, is this actually KMP?
+Maybe next time.
+
+<b>footnotes</b><br>
+<a name="infixof">&dagger;</a> Actually, this function was recently added under the, in my opnion, wrong<sup>&Dagger;</sup> name @isInfixOf@.<br>
+<a name="infixof">&Dagger;</a> It is wrong because while "a is a prexif of b" and "a is a suffix of b" are valid English sentences, there is as far as I know no such thing as "an infix of". Maybe "infix in", but not "of". &lt;/rant>

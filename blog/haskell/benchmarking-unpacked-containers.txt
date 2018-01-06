@@ -1,0 +1,49 @@
+title: Benchmark: unpacked values in containers
+subtitle: How much can performance of Data.Map be improved by unpacking integers?
+tags: haskell, performance
+date: 2012-06-08 23:59 CEST
+
+Inspired by <a href="http://www.haskell.org/pipermail/glasgow-haskell-users/2012-March/022079.html">a discussion on the ghc mailing list</a>, I wondered how much performance can be gained by specializing and unboxing certain data types.
+In particular, I looked at @Data.Map@.
+Suppose that you have a map from ints to ints.
+First of all, you should be using @Data.IntMap@ instead, but that is besides the point.
+
+If you know that the keys and values are always strict integers, then the data type could be specialized from
+
+> data Map k a
+>     = Bin {-# UNPACK #-} !Size !k a !(Map k a) !(Map k a)
+>     | Tip
+
+to
+
+> data MapIntInt
+>     = Tip
+>     | Bin {-# UNPACK #-} !Size {-# UNPACK #-} !Int {-# UNPACK #-} !Int
+>           !(MapIntInt) !(MapIntInt)
+
+It would be great if this could be generated automatically by the compiler. But as was pointed out, that is really hard to do, because the size of the constructors would change, depending on the type arguments. So generic functions become impossible. It would also require multiple different info tables for the garbage collector, among other problems.
+
+So, it's probably easier to do this specialization manually.
+I was thinking of using template haskell, in combination with type families. This would allow you to write something like 
+> deriveSpecializedUnboxedType [d|type UnboxedMapIntInt = Map !Int !Int |]
+but before going there, let's first see whether this is worth the effort at all.
+
+So, I did the specialization by hand for @Map Int Int@, and ran the containers benchmarks.
+Here is a representative part of the results,
+ <br><a href="files/bench-MapIntInt.html"><img src="image/benchmark-MapIntInt.png" style="margin:.1em 1em;"></a><br>
+click for full the criterion report. The horribly hacky code is available <a href="https://github.com/twanvl/containers/blob/specialize/benchmarks/MapIntInt.hs">on github</a>.
+
+In this graph
+
+* generic = generic @Map Int Int@.
+* unboxed = @Map@ with both key and value specialized to strict and unpacked @Int@.
+* gintmap = value generic @IntMap Int@
+* uintmap = @IntMap@ with values specialized to unpacked @Int@.
+
+As you can see, specializing and unboxing gives a modest performance improvement. There is probably also an improvement in memory usage, but this benchmark doesn't directly measure that.
+Switching to a better data structure, i.e. patricia tries instead of balanced trees helps a lot more for some benchmarks, such as @delete@, but very little for others such as @map@.
+
+Overall, it seems like specialization can definitely be worth it; in some cases improving performance by 40%. And it never has a negative impact, at least in this benchmark. Real life might be different though, especially if there are also Maps with other types of keys and values around.
+
+Note also that this benchmark was compiled for a 32-bit architecture. On 64-bit, pointers and hence boxed values have more overhead.
+

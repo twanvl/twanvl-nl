@@ -1,0 +1,33 @@
+title: A small rant on writing academic papers
+subtitle: In which the author vents about working on towards his first publication.
+date: 2011-07-22 14:10:13Z
+
+Warning: rant ahead.
+
+This week I submitted for review the second revision of what will hopefully become my first scientific publication.
+Together with my supervisor I spent countless hours on this article.
+But does that mean that it is now the best text that I have ever written? I don't think so.
+
+While a lot of effort did go into improving the clarity, structure, etc.; there are several competing interests which make things harder:
+* The article should be short, which means that a lot of material had to be cut. Some things could be better explained, if only there was more space.
+* On the other hand, the article should be complete and self contained. If I were to write a blog post on the same topic, I would split it up into a series of posts. But each part by itself would be unpublishable, so it has to be a whole.
+* There are many asides, either to remark on something interesting, or sometimes just to appease the reviewers.
+
+Pleasing the reviewers is something which I especially disliked. To be fair, a lot of comments raised by reviewers were valid, and pointed to actual shortcomings or errors in the manuscript. But some of the comments were of the form ''"Could you also compare with X"'', ''"Did you consider Y"'' and ''"This is related to prior work Z"''. As a result of trying to cover these comments, the paper becomes a Frankenstein's monster of irrelevant remarks. Where before we had: 
+
+# General Point 1
+# Detailed Point 2
+# Therefore Point 3
+
+It now becomes
+
+# Point 1
+# Remark saying that point 1 was previously considered by SomePaper2010.
+# Detailed Point 2
+# Contrasting approach 2 against approach 2b from OtherPaper2009.
+# Therefore Point 3
+# Aside saying that also 3b, which is irrelevant for the rest of the article.
+
+Okay, I am exaggerating a bit here. But still, I feel that the article would be better if it didn't try to do so many things at once.
+
+Suggestions, criticism and comments on my sanity are welcome.

@@ -1,0 +1,191 @@
+title: References, Arrows and Categories
+subtitle: Functional references as a category
+date: 2007-11-07
+tags: haskell, lens
+
+--Recap: functional references--
+
+Last time (okay, it was over two months ago) I talked about
+<a href="http://twanvl.nl/blog/haskell/overloading-functional-references">overloading functional references</a> so that they can be used both as regular functions and as references.
+The data type of references I used was
+> data FRef s a = FRef
+>       { get :: s -> a
+>       , set :: a -> s -> s
+>       }
+While I arrived at the type class,
+> class Ref r where
+>       ref :: (a -> b) -> (b -> a -> a) -> r a b
+>       (.) :: r b c -> r a b -> r a c
+This provides 'construction' and 'composition'.
+
+
+--Arrows--
+
+The class parameter @r@ has kind @* -> * -> *@, meaning it takes two types and 'evaluates' to a type.
+If you are familiar with the Haskell libraries you may know there is a similar class who's parameter also has kind @* -> * -> *@,
+called <a href="http://www.haskell.org/ghc/docs/latest/html/libraries/base/Control-Arrow.html#t%3AArrow">Arrow</a>.
+There is an instance @Arrow (->)@, just like there I defined an instance @Ref (->)@.
+
+According to the <a href="http://haskell.org/arrows/">arrows webpage</a>, ''"Arrows are a new abstract view of computation"''.
+This raises the question: Can we combine these ideas? Are functional references arrows?
+
+That Arrow class looks like
+> class Arrow a where
+>       arr :: (b -> c) -> a b c
+>       (>>>) :: a b c -> a c d -> a b d
+>       -- some more stuff
+If you look closely, @(>>>)@ is just @(.)@ with the arguments reversed.
+What about @arr@? @arr@ should turn any function into a reference.
+But references need a way to transform the result back to be able to @set@ the new value.
+
+Clearly this is ''not going to work''. The problem is that Arrows are not general enough!
+
+
+--The easy fix--
+What we need here is to make @Ref@ a ''super''class of @Arrow@.
+All current @Arrow@s can implement @(.)@, since it is the same as @(>>>)@.
+To implement @ref@ an arrow just ignores the setter, then @ref@ becomes the same as @arr@.
+
+Okay, we're done.
+
+Except that we will have ''the same problem'' again the next time someone wants to generalize Arrows.
+It would be much better to fix it once and for all.
+
+
+--Categories--
+The most basic idea behind arrows comes from category theory <sup><a href="#cattheory" style="text-decoration:none;">&dagger;</a></sup>.
+An 'arrow' or 'morphism' is a connection between two objects from a 'category', in this case two Haskell types.
+Usually the category we are interested in is @Hask@, <a href="http://en.wikibooks.org/wiki/Haskell/Category_theory">the category of Haskell functions</a>.
+In @Hask@ a 'morphism' between two types @a@ and @b@ is just a function from type @a@ to type @b@, so a function of type @a -> b@.
+
+An @Arrow@ is nothing more than a ''different'' category.
+The types are still the same, but instead of a function we get something else for the morphisms.
+
+If you look up the <a href="http://en.wikipedia.org/wiki/Category_%28mathematics%29">definition of a category</a> you will find that in general only two things are required of morphism:
+* There is an identity morphism.
+* Morphisms can be composed.
+
+Unlike the @Arrow@ type class, there is nothing saying that the morphisms have to correspond to functions.
+For instance using the reverse arrow, @(<-) = flip (->)@, as the morphisms gives is a perfectly valid category.
+So does the something as strange as @newtype I a b = I Integer@.
+
+If you look at the above definition of a category, it immediately leads to a Haskell type class
+> class Category cat where
+>       id  :: cat a a
+>       (.) :: cat b c -> cat a b -> cat a c
+
+Which is a generalization of both @Ref@ and @Arrow@.
+So it turns out that the only essential component we are left with is the composition operator.
+Everything else was relating the category to Haskell functions or references.
+
+Category theory comes with a small set of laws as well:
+> id . f  ==  f  ==  f . id
+> f . (g . h) == (f . g) . h
+In other words, composing with the identity function does nothing, 
+and composition is associative. Great!
+
+
+--Making it useful again--
+Now that we have kicked @arr@ and friends out of the type class lots of types can become instances.
+On the other hand, the class itself has become pretty useless.
+
+Before going to functional references there is a more general notion, invertible functions.
+These are discussed in relation to arrows in <a href="http://www.cs.ru.nl/A.vanWeelden/bi-arrows/">"There and back again: arrows for invertible programming"</a>.
+The only way to be sure that a function is invertible is to give its inverse. In a data type that could look like
+> data Invertible a b = Invertible
+>       { forward  :: a -> b
+>       , backward :: b -> a
+>       }
+
+To put that in the @Arrow@/@Category@ framework we can add a subclass @InvArrow@.
+It is similar to the @Ref@ class, only for invertible functions instead of references.
+> class Category cat => InvArrow cat where
+>       arrInv :: (a -> b) -> (b -> a) -> (a ~> b)
+>       
+>       -- We get a default implementation for id.
+>       !!!<span class="comment">-- Note that this is not valid Haskell, we would need something like <a href="http://repetae.net/john/recent/out/classalias.html">class aliases</a>.</span>!!!
+>       id = arrInv (\x -> x) (\x -> x)
+
+What does it mean if a type/category is an instance of @InvArrow@?
+It means that that category ''contains all invertible functions''.
+Read this statement carefully.
+An @InvArrow@ does not mean that morphisms in the category are invertible, but that invertible functions can be turned into morphisms.
+
+With @InvArrow@ we already get all kinds of interesting morphisms, for example
+> negate :: (InvArrow cat, Num a) => cat a a
+> (+) :: (InvArrow cat, Num a) => a -> cat a a
+
+> > update negate (+1) 3 == 2 -- increment the negation by 1, so decrement by one
+> > set (3+) undefined 4 == 1 -- find a value x such that 3+x == 4
+
+This last example is a bit ugly, because we use function references.
+It will look better if we use the @Invertible@ type.
+The function similar to @set@ is @inverse@:
+> -- Get the inverse of an invertible function
+> inverse :: InvArrow cat => Invertible a b -> cat b a
+> inverse i = arrInv (backward i) (forward i)
+Now we can write the above example without @undefined@:
+> > inverse (+3) 4 == 1
+
+
+--To references and beyond--
+Inverses are nice, but we haven't got references yet.
+There is no way to define @fst :: InvArrow cat => cat (a,b) a@.
+
+For that we really need the @Ref@ class, or in this arrow framework, @RefArrow@:
+> class InvArrow cat => RefArrow cat where
+>       arrRef :: (a -> b) -> (b -> a -> a) -> cat a b
+>       
+>       -- A default implementation of @arrInv@
+>       arrInv f g = arrRef f (\b a -> g b)
+
+Like with @InvArrow@, if a category type is an instance of @RefArrow@, it means that that category contains all functional references.
+
+Finally, the least restrictive class is the regular old @Arrow@,
+> class RefArrow cat => Arrow cat where
+>       arr :: (a -> b) -> cat a b
+>       
+>       arrRef f _ = arr f
+
+To summarize, we now have a class hierarchy that looks like
+> Category => InvArrow => RefArrow => Arrow
+
+
+--The rest of the @Arrow@ class--
+If you look back to the definition of @Arrow@ I gave above, you will see
+>       -- some more stuff
+Besides lifting (@arr@) and composition (@>>>@) the <a href="http://haskell.org/ghc/docs/latest/html/libraries/base-3.0.0.0/Control-Arrow.html#t%3AArrow">standard Arrow class</a> also
+defines combinators for working with tupled values.
+
+We could put these in the new @Arrow@ class, but they might also be useful for types which are not full arrows.
+Like, say, functional references.
+
+The most flexible thing to do is to put this functionality in yet another class.
+For working with pairs we can define
+> class Category cat => CategoryPair cat where
+>       first  :: cat a b -> cat (a,c) (b,c)
+>       second :: cat a b -> cat (c,a) (c,b)
+>       (***)  :: cat a b -> cat c d -> cat (a,c) (b,d)
+
+There are some tricky issues to work out,
+but this post is already five pages long.
+
+I am going to stop here. Pairs, sum types, fixed points, monoids and duality all will have to wait until next time.
+
+
+--The code--
+That was a long story, and I even stopped way before the end and skipped the instances.
+
+The generalized arrow/category framework is growing into a useful library that hopefully someday can become part of the base libraries.
+I have decided to put the code somewhere. In this case, somewhere is
+  <pre>darcs get <a href="http://code.haskell.org/category">http://code.haskell.org/category</a></pre>
+
+As the name suggests, this library is not just for functional references.
+Rather it contains the whole @Category@ framework. The @FRef@ type is just a bonus.
+
+The library also contains code for deriving @RefArrow@ functions for record fields, courtesy to omnId.
+
+
+<b>footnotes</b><br>
+<a name="cattheory">&dagger;</a>: I am in no way a category theory expert; Category theorists feel free to hate me for abuse of terminology and incorrect explanations.
+In particular, the type constructor @cat@ is not really the category itself, just like the @f@ in @Functor f@ is not really a functor. But it is the closest thing we have got.

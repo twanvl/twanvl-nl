@@ -1,0 +1,30 @@
+title: Stream fusion for streaming, without writing any code
+subtitle: Reusing existing libraries for fun and profit
+date: 2016-06-07 23:02 CEST
+sourcelink url: https://gist.github.com/twanvl/4fb44b19b4875d9c0c113e9baa3ba91c
+sourcelink: Source code for this post is available on github.
+tags: haskell, pipes
+
+I recently came accross the <a href="http://hackage.haskell.org/package/streaming">streaming library</a>.
+This library defines a type @Stream (Of a) m b@ for computations that produce zero or more values of type @a@ in a monad @m@, and eventually produce a value of type @b@. This stream type can be used for efficient IO without having to load whole files into memory. The streaming library touts <a href="http://i.imgur.com/sSG5MvH.png">bechmark results</a> showing superior performance compared to other libraries like conduit, pipes and machines.
+
+Looking at <a href="http://hackage.haskell.org/package/streaming-0.1.4.2/docs/Streaming-Internal.html#t:Stream">the datatype</a> definition,
+> data Stream f m r = Step !(f (Stream f m r))
+>                   | Effect (m (Stream f m r))
+>                   | Return r
+it struck me how similar this type is to what is used in the stream fusion framework. The main difference being that the streaming library allows for interleaved monadic actions, and of course the lack of decoupling of the state from the stream to allow for fusion. But the vector library actually also uses such a monadic stream fusion framework, to allow for writing into buffers and such. This is type is defined in the module <a href="https://hackage.haskell.org/package/vector-0.11.0.0/docs/Data-Vector-Fusion-Stream-Monadic.html">Data.Vector.Fusion.Stream.Monadic</a>.
+> data Stream m a = forall s. Stream (s -> m (Step s a)) s
+> data Step s a where
+>    Yield :: a -> s -> Step s a
+>    Skip  :: s -> Step s a
+>    Done  :: Step s a
+
+So, why not try to use vector's stream type directly as a representation of streams? I <a href="https://gist.github.com/twanvl/4fb44b19b4875d9c0c113e9baa3ba91c">added this type as an extra alternative to the benchmark</a>, and without writing any more code, the results are pretty impressive:
+<br><a href="image/benchmark-vector-streaming.html"><img src="image/benchmark-vector-streaming.png" style="border:0"></a>
+
+The only function that could be improved is @scanL@.
+In @vector@ this function is implemented in terms of @prescan@ (scanL without the first element) and @cons@, which makes it pretty inefficient. So I made a specialized implementation.
+
+And that's all. A simple streaming 'library' with state of the art performance, while writing hardly any new code.
+Now to be fair, there are some reasons why you wouldn't always want to use these fusing streams. In particular, the resulting code could get quite large, and without fusion they may not be the most efficient.
+

@@ -1,0 +1,123 @@
+title: Overloading functional references
+subtitle: Using functional references without needing to call 'get'.
+date: 2007-09-03
+tags: haskell, lens
+
+Recently there have been some <a href="http://luqui.org/blog/archives/2007/08/05/">blog post</a>
+and <a href="http://article.gmane.org/gmane.comp.lang.haskell.cafe/28094">mailing list messages</a>
+about "functional references". In this message I will look into ways to improve upon that concept.
+
+The above links should give you an idea of what a functional reference is, but I will explain it here in my own words.
+You can skip this introduction if you already know what functional references are.
+
+-- What are functional references? --
+
+A functional reference is a data structure that can be used to update parts of another structure,
+it is a ''reference'' into that structure.
+We need a way to ''get'' the part, and a way to replace the part by ''set''ting it to something else.
+This leads to the data type:
+> data FRef s a = FRef
+>       { get :: s -> a
+>       , set :: a -> s -> s
+>       }
+Now @FRef s a@ represents a reference to an @a@ inside an @s@ structure.
+
+One of the simplest possible (non-trivial) references is that to the first part of a pair:
+> fst :: FRef (x,y) x
+> fst = FRef
+>       { get = \(x,y) -> x
+>       , set = \x (_,y) -> (x,y)
+>       }
+Having defined this, we can use it to access and modify pairs, for example
+] > get fst (1,2)
+] 1
+] > set fst 3 (1,2)
+] (3,2)
+You can read this as "get the first part of ..." and "set the first part to 3 in ...".
+
+Another useful function is @update@,
+> update :: FRef s a -> (a -> a) -> (s -> s)
+> update ref f s = set ref (f (get ref s)) s
+Update gets the value, applies a function, and sets it again.
+This allows us to 'map' functions over parts of data structures:
+]> > update fst (+1) (1,2)
+]> (2,2)
+
+The real power of functional references lies in their composability.
+Like functions, we can compose two references to give a new one
+> compose :: FRef b c -> FRef a b -> FRef a c
+> compose bc ab = FRef
+>       { get = get bc . get ab
+>       , set = update ab . set bc
+>       }
+
+We can now modify nested pairs:
+
+]> > update (fst `compose` fst) (*2) ((3,4),5)
+]> ((6,4),5)
+ 
+-- Use case: records --
+
+The place where these references shine is with records.
+Say we have the following data type:
+> data Employee = Employee
+>       { name   :: String
+>       , salary :: Int
+>       }
+It would be great if @name@ and @salary@ where references,
+then we could simply say
+> giveRaise = update salary (+100)
+This shouldn't be too hard to automate with <a href="http://www-users.cs.york.ac.uk/~ndm/derive/">Data.Derive</a>, the functions would look like
+> name = FRef
+>       { get = name_
+>       , set = \n e -> e { name_ = n }
+>       }
+Or better yet, we could specify references as the default behavior in the next Haskell standard!
+
+There is a problem, however, when we have defined the record accessors to be references.
+Take the normally legal code
+> johnsSallary = salary john
+This is no longer valid, since salary is not a function. Instead we must write
+> johnsSallary = get salary john
+
+-- Type classes to the rescue --
+
+Fortunately there is a clean solution to this problem using type classes.
+We can define the type class
+> class Ref r where
+>       ref :: (a -> b) -> (b -> a -> a) -> r a b
+We can define an instance for functional references,
+> instance Ref FRef where
+>       ref = FRef
+As well as for functions
+> instance Ref (->) where
+>       ref = const
+
+The record accessors can now be defined as
+> name :: Ref r => r Employee String
+> name = ref name_ (\n e -> e { name_ = n })
+
+And all is well again:
+> giveRaise = update salary (+100)
+> johnsSallary = salary john
+
+While we are at it, we could also add the @(.)@ operator to the class,
+> class Ref r where
+>       ref :: (a -> b) -> (b -> a -> a) -> r a b
+>       (.) :: r b c -> r a b -> r a c
+> instance Ref FRef where
+>       ref = FRef
+>       (.) = compose
+> instance Ref (->) where
+>       ref = const
+>       (.) = (Prelude..) -- the (.) from the prelude
+now
+> giveRaiseToFirst = update (salary . fst) (+100)
+Gives a raise to the first employee in a pair.
+
+-- Concluding remarks --
+
+Note that all this is perfectly valid Haskell 98 code, no extensions are needed.
+This means that it should not be hard to add such references to the language standard.
+
+There are many more neat things you can do with functional references, but I will save that for another time.

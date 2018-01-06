@@ -1,0 +1,226 @@
+title: Simple reflection of expressions
+subtitle: Convert Haskell expressions back into strings
+date: 2008-01-30
+tags: haskell
+
+This blog post is inspired by a message from Cale on #haskell yesterday.
+He came up with an amazing way to show how @foldr@ and @foldl@ work:
+]> <Cale>      > foldr (\x y -> concat ["(f ",x," ",y,")"]) "z" (map show [1..5])
+]> <lambdabot> "(f 1 (f 2 (f 3 (f 4 (f 5 z)))))"
+
+While the output looks great, the call itself could be clearer, especially for beginners.
+Through a combination of overloading and small hacks it is possible to get the same result with a much nicer expression,
+
+]> > foldr f x [1..5]
+]> f 1 (f 2 (f 3 (f 4 (f 5 x))))
+
+-- Let's get started --
+
+I will call this module @SimpleReflect@, since this is a poor mans form of reflection, converting code back to expressions at run time.
+
+> module SimpleReflect where
+
+Our results will be 'expressions'.
+All we need to do with expressions is ''show'' them, convert them to strings.
+
+The @Show@ class has a function @showsPrec :: Int -> a -> ShowS@ for converting a value of type @a@ to a string.
+The @ShowS@ type improves the performance compared to using strings; the integer is used for putting parentheses in the right places.
+But none of this matters for now,
+we will just emulate that behavior for our expression type:
+
+> newtype Expr = Expr { showExpr :: Int -> ShowS }
+> 
+> instance Show Expr where
+>     showsPrec p r = showExpr r p
+
+The things like @f@ and @x@ will be ''variables'' these are just strings. Showing strings is easy,
+
+> var :: String -> Expr
+> var s = Expr { showExpr = \_ -> showString s }
+
+In fact, we can show all kinds of values, for instance numbers.
+So we could make a function that ''lifts'' any showable value to an expression:
+
+> lift :: Show a => a -> Expr
+> lift x = Expr { showExpr = \p -> showsPrec p x }
+
+While this is almost identical to @var@, it is not the same,
+because the @Show@ instance for @String@ is not the same as @showString@. Compare:
+]> > var "x"
+]> x
+]> > lift "x"
+]> "x"
+
+-- From variables to functions --
+
+In your average piece of source code multiple expressions are combined with operators.
+The most common operator is function application, written with just whitespace.
+Each Haskell operator has a ''precedence level'', indicating how tight that operator binds to its arguments.
+
+In this blog post we only deal with left associative operators, which means that the left sub-expressions is printed with the same precedence level.
+A simple combinator for operators is then:
+
+> op :: Int -> String -> Expr -> Expr -> Expr
+> op prec op a b = Expr { showExpr = showFun }
+>  where showFun p = showParen (p > prec) $
+>                    showExpr a prec . showString op . showExpr b (prec + 1)
+
+We would like to be able to use variables like @f@ as if they were functions, so this @f@ has to have the type @f :: a -> Expr@, or @f :: a -> b -> Expr@, etc.
+This can be done with type classes. The class @FromExpr@ defines what things we can use expressions for:
+
+> class FromExpr a where
+>     fromExpr :: Expr -> a
+
+Obviously expressions are themselves expressions,
+
+> instance FromExpr Expr where
+>     fromExpr = id
+
+Any expression can also be used as a function.
+As stated above function application is the operator @" "@;
+it has precedence level 10, higher than any real operator.
+To be as generic as possible we can @lift@ any showable argument to an expression.
+
+> instance (Show a, FromExpr b) => FromExpr (a -> b) where
+>     fromExpr f a = fromExpr $ op 10 " " f (lift a)
+
+With @FromExpr@ in place we can make more generic variables that can be used as any function type:
+
+> fun :: FromExpr a => String -> a
+> fun = fromExpr . var
+
+With all this in place Cale's @foldr@ example can now be written as
+
+]> > foldr (fun "f") (var "x") [1..5]
+]> f 1 (f 2 (f 3 (f 4 (f 5 x))))
+
+-- Lifting the alphabet --
+
+To write even shorter examples a slightly evil idea is to simply define 26 variables,
+> a,b,c,.. :: FromExpr a => a
+
+There is a minor problem with this idea, which will become apparent once you try it out:
+
+]> *SimpleReflect> foldr f x [1..5]
+] 
+] <interactive>:1:8:
+]     Ambiguous type variable `b' in the constraints:
+]       `FromExpr b' arising from a use of `x' at <interactive>:1:8
+]       `Show b' arising from a use of `f' at <interactive>:1:6
+]     Probable fix: add a type signature that fixes these type variable(s)
+
+The compiler doesn't know what the type of @x@ should be.
+It is only used as an argument to @f@, but that can be any @Show@able type.
+In the future we might be able to write @default FromExpr Expr@ (<a href="http://hackage.haskell.org/trac/haskell-prime/wiki/Defaulting">see the Haskell' wiki</a>),
+but until then we will have to do something else.
+
+Since usually the names @f@, @g@, etc. are used for functions,
+I chose to only overload those, and make the rest simple variables:
+
+> a,b,c,d,e,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z :: Expr
+> [a,b,c,d,e,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z]
+>  = [var [x] | x <- ['a'..'e']++['i'..'z']]
+
+> f,g,h :: FromExpr a => a
+> f = fun "f"
+> g = fun "g"
+> h = fun "h"
+
+With our 26 new top level names we can finally the original example in a natural way,
+
+]> > foldr f x [1..5]
+]> f 1 (f 2 (f 3 (f 4 (f 5 x))))
+
+-- Lifting numbers (a.k.a. lots-of-instances) --
+
+All this work for just @foldr@ and @foldl@ seems like a bit of a waste of time.
+To make things a little bit more interesting we could also add support for numeric operations.
+Then we can write
+
+]> > sum [1..5] :: Expr
+]> 0 + 1 + 2 + 3 + 4 + 5
+
+To do this we need to define instances of @Num@ and @Enum@.
+The first of these is not very hard, but we need @Eq@ and later @Ord@ instances as well.
+
+> instance Eq Expr where
+>     a == b = show a == show b
+
+The @Ord@ class has two functions of type @a -> a -> a@, which is where we can do something interesting:
+
+> instance Ord Expr where
+>     compare a b = compare (show a) (show b)
+>     min = fun "min"
+>     max = fun "max"
+
+Now we get @minimum [x,y,z] ==> min (min x y) z@ for free.
+
+The @Num@ class has some operators.
+The mechanism for defining does is already in place, so this class should be simple:
+
+> instance Num Expr where
+>     (+)    = op 6 " + "
+>     (-)    = op 6 " - "
+>     (*)    = op 7 " * "
+>     negate = fun "negate"
+>     abs    = fun "abs"
+>     signum = fun "signum"
+>     fromInteger = lift
+
+To write @[1..5] :: [Expr]@, @Expr@ needs to be an instance of @Enum@.
+Here we bump into a bit of a problem, how do we enumerate expressions?
+
+Well, I will cheat a bit, and read out the expression as an integer.
+This operation is the inverse of @lift@, let's call it @unlift@:
+
+> unlift :: Read a => Expr -> a
+> unlift expr = read (show expr)
+
+Conversion to @Integers@ is usually done with @toInteger@ from the @Integral@, so we add an instance for that as well.
+We need a @Real@ instance first:
+
+> instance Real Expr where
+>     toRational = toRational . toInteger
+
+> instance Integral Expr where
+>     toInteger = unlift
+>     quot = op 7 " `quot` "
+>     rem  = op 7 " `rem` "
+>     div  = op 7 " `div` "
+>     mod  = op 7 " `mod` "
+>     -- someone forgot a default :(
+>     quotRem a b = (quot a b, rem a b)
+>     divMod  a b = (div  a b, mod a b)
+
+Finally the @Enum@ class. As I already said, the actual enumeration can be handled by going through @toInteger@ and @fromInteger@.
+
+> instance Enum Expr where
+>     succ   = fun "succ"
+>     pred   = fun "pred"
+>     toEnum = fun "toEnum"
+>     fromEnum = fromEnum . toInteger
+>     enumFrom       a     = map fromInteger $ enumFrom       (ti a)
+>     enumFromThen   a b   = map fromInteger $ enumFromThen   (ti a) (ti b)
+>     enumFromTo     a   c = map fromInteger $ enumFromTo     (ti a)        (ti c)
+>     enumFromThenTo a b c = map fromInteger $ enumFromThenTo (ti a) (ti b) (ti c)
+> ti = toInteger -- just to fit in the page layout of the blog
+
+-- Playing a bit --
+
+None of the above was terribly complicated, just a lot of boilerplate code.
+What can we do with such a well-plated boiler?
+Here are some examples:
+
+]> > sum $ map (*x) [1..5]
+]> 0 + 1 * x + 2 * x + 3 * x + 4 * x + 5 * x
+
+]> > iterate (^2) x
+]> [x, x * x, x * x * (x * x), x * x * (x * x) * (x * x * (x * x)), ...
+
+]> > scanl f x [a,b,c]
+]> [x, f x a, f (f x a) b, f (f (f x a) b) c]
+
+]> > zipWith3 f [1,2..] [1,3..] [1,4..] :: [Expr]
+]> [f 1 1 1, f 2 3 4, f 3 5 7, f 4 7 10, f 5 9 13, f 6 11 16, ...
+
+''Coming soon to a lambdabot near you.''
