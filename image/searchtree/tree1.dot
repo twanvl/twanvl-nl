@@ -1,0 +1,22 @@
+digraph G{
+	bgcolor="#ffffff00";
+	size="2.7";
+	
+	node[shape=circle,style=filled,fillcolor="#ddeeff"]
+	1;2;3;4;5
+	node[shape=square,style=filled,fillcolor="#ddffdd"]
+	12345[label="5"]
+	12[label="2"]
+	345[label="5"]
+	45[label="5"]
+	
+	12345->12
+	12345->345
+	12->1
+	12->2
+	345->3
+	345->45
+	45->4
+	45->5
+}
+

@@ -1,0 +1,14 @@
+digraph G{
+	bgcolor="#ffffff00";
+	size="2.7";
+	
+	node[shape=square,style=filled,fillcolor="#ddffdd"]
+	node[shape=circle,style=filled,fillcolor="#ddeeff"]
+	node[shape=circle,style=filled,fillcolor="#ddffdd"]
+	a;b;c;d;e
+
+	a->b; a->c; a->c; a->e;
+	b->d; b->d;
+	c->d; c->e;
+}
+

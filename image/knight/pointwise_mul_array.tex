@@ -1,0 +1,22 @@
+\documentclass[12pt]{article}
+\usepackage{latexsym}
+\usepackage{amsthm}
+\usepackage{amsmath}
+\usepackage{stmaryrd}
+\usepackage[english]{babel}
+\usepackage{verbatim}
+\usepackage{color}
+\pagestyle{empty}
+\begin{document}\begin{align*}
+	\begin{pmatrix}a\\b\\c\end{pmatrix}
+	 *
+	\begin{pmatrix}d\\e\\f\end{pmatrix}
+	 \; = \;
+	\raisebox{5mm }{$a\begin{pmatrix}d\\e\\f\end{pmatrix}$} +
+	\raisebox{0mm }{$b\begin{pmatrix}d\\e\\f\end{pmatrix}$} +
+	\raisebox{-5mm}{$c\begin{pmatrix}d\\e\\f\end{pmatrix}$}
+	 \; = \;
+	\left(\begin{array}{@{}c@{}c@{}c@{}c@{}c@{}}
+	     ad&&&&\\ae&+&bd&&\\af&+&be&+&cd\\&&bf&+&ce\\&&&&cf
+	\end{array}\right)%
+\end{align*}\end{document}
